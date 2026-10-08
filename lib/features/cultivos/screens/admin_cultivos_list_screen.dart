@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:agro_bolivar/features/cultivos/models/cultivo_admin_model.dart';
@@ -30,6 +31,37 @@ class _AdminCultivosListScreenState extends State<AdminCultivosListScreen> {
   final CultivoApiService _cultivoService = CultivoApiService();
   final TextEditingController _searchController = TextEditingController();
 
+  late PageController _heroPageController;
+  int _currentHeroPage = 0;
+  Timer? _heroTimer;
+
+  final List<Map<String, String>> _heroItems = [
+    {
+      'title': 'Gestión de Cosecha',
+      'subtitle': 'Optimiza los tiempos de siembra y recolección para maximizar tu rendimiento agrícola.',
+      'tag': 'Técnica',
+      'image': 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800&auto=format&fit=crop&q=80',
+    },
+    {
+      'title': 'Rotación de Cultivos',
+      'subtitle': 'Mejora la salud del suelo y previene plagas alternando especies en tus lotes.',
+      'tag': 'Sostenibilidad',
+      'image': 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&auto=format&fit=crop&q=80',
+    },
+    {
+      'title': 'Riego Eficiente',
+      'subtitle': 'Aplica el agua y fertilizantes exactos según la etapa fenológica del cultivo.',
+      'tag': 'Tecnología',
+      'image': 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=800&auto=format&fit=crop&q=80',
+    },
+    {
+      'title': 'Comercialización Directa',
+      'subtitle': 'Establece precios competitivos y conecta directamente con el mercado regional.',
+      'tag': 'Mercado',
+      'image': 'https://images.unsplash.com/photo-1488459716781-31db52582fe9?w=800&auto=format&fit=crop&q=80',
+    },
+  ];
+
   List<CultivoAdminModel> _cultivos = [];
   List<CultivoAdminModel> _filteredCultivos = [];
   bool _isLoading = true;
@@ -38,11 +70,28 @@ class _AdminCultivosListScreenState extends State<AdminCultivosListScreen> {
   @override
   void initState() {
     super.initState();
+    _heroPageController = PageController(viewportFraction: 0.92);
+    _startHeroAutoScroll();
     _fetchCultivos();
+  }
+
+  void _startHeroAutoScroll() {
+    _heroTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_heroPageController.hasClients) {
+        _currentHeroPage = (_currentHeroPage + 1) % _heroItems.length;
+        _heroPageController.animateToPage(
+          _currentHeroPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    _heroTimer?.cancel();
+    _heroPageController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -146,9 +195,9 @@ class _AdminCultivosListScreenState extends State<AdminCultivosListScreen> {
         backgroundColor: Colors.white,
         child: Column(
           children: [
-            // Buscador Limpio
+            // Buscador
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -171,12 +220,154 @@ class _AdminCultivosListScreenState extends State<AdminCultivosListScreen> {
               ),
             ),
 
+            // Carrusel Hero Banner
+            _buildHeroCarousel(),
+
             Expanded(
               child: _buildBodyContent(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHeroCarousel() {
+    return Column(
+      children: [
+        SizedBox(
+          height: 155,
+          child: PageView.builder(
+            controller: _heroPageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentHeroPage = index;
+              });
+            },
+            itemCount: _heroItems.length,
+            itemBuilder: (context, index) {
+              final item = _heroItems[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Stack(
+                    children: [
+                      Image.network(
+                        item['image']!,
+                        height: 155,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        headers: const {'User-Agent': 'Mozilla/5.0'},
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: primaryGreen.withOpacity(0.1),
+                            child: const Center(
+                              child: Icon(Icons.eco_rounded, size: 48, color: primaryGreen),
+                            ),
+                          );
+                        },
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.15),
+                              Colors.black.withOpacity(0.75),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 12,
+                        left: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: primaryGreen,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            item['tag']!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 12,
+                        left: 14,
+                        right: 14,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['title']!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                height: 1.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              item['subtitle']!,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_heroItems.length, (index) {
+            final isSelected = _currentHeroPage == index;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              height: 5,
+              width: isSelected ? 18 : 5,
+              decoration: BoxDecoration(
+                color: isSelected ? primaryGreen : primaryGreen.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 8),
+      ],
     );
   }
 
@@ -252,7 +443,6 @@ class _AdminCultivosListScreenState extends State<AdminCultivosListScreen> {
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
       children: [
-        // Encabezado de Sección
         Padding(
           padding: const EdgeInsets.only(bottom: 10, top: 2),
           child: Row(
@@ -279,24 +469,30 @@ class _AdminCultivosListScreenState extends State<AdminCultivosListScreen> {
           ),
         ),
 
-        // Tarjetas
+        // Cards de Cultivos Estructuradas por Secciones
         ..._filteredCultivos.map((cultivo) => _buildCultivoCard(cultivo)),
       ],
     );
   }
 
-  // --- TARJETA CON IMAGEN COMPACTA (105px) Y SECCIONES ORDENADAS ---
   Widget _buildCultivoCard(CultivoAdminModel cultivo) {
     final hasFoto = cultivo.urlFoto != null && cultivo.urlFoto!.isNotEmpty;
     final hasTelefono = cultivo.telefono != null && cultivo.telefono!.isNotEmpty;
     final hasEmail = cultivo.email != null && cultivo.email!.isNotEmpty;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -311,161 +507,175 @@ class _AdminCultivosListScreenState extends State<AdminCultivosListScreen> {
               ),
             );
           },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. FOTO BANNER COMPACTA (105 px)
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Container(
-                      height: 105,
-                      width: double.infinity,
-                      color: const Color(0xFFF1F5F9),
-                      child: hasFoto
-                          ? Image.network(
-                        cultivo.urlFoto!,
-                        fit: BoxFit.cover,
-                      )
-                          : const Center(
-                        child: Icon(
-                          Icons.eco_outlined,
-                          color: textColorMuted,
-                          size: 36,
-                        ),
-                      ),
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. MINIATURA
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 95,
+                    height: 110,
+                    color: const Color(0xFFF1F5F9),
+                    child: hasFoto
+                        ? Image.network(
+                      cultivo.urlFoto!,
+                      fit: BoxFit.cover,
+                      headers: const {'User-Agent': 'Mozilla/5.0'},
+                      errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.eco_outlined, color: textColorMuted, size: 32),
+                    )
+                        : const Icon(Icons.eco_outlined, color: textColorMuted, size: 32),
                   ),
+                ),
+                const SizedBox(width: 14),
 
-                  // Tags flotantes
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: _buildFloatingTag(
-                      label: 'AGRÍCOLA',
-                      bgColor: Colors.white.withOpacity(0.92),
-                      textColor: tagTextAccent,
-                    ),
-                  ),
-                  if (cultivo.estado.isNotEmpty)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: _buildFloatingTag(
-                        label: cultivo.estado.toUpperCase(),
-                        bgColor: Colors.black.withOpacity(0.65),
-                        textColor: Colors.white,
-                      ),
-                    ),
-                ],
-              ),
-
-              // 2. SECCIÓN: NOMBRE Y PRECIO
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            cultivo.nombre.isNotEmpty ? cultivo.nombre : 'Sin nombre',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: textColorDark,
-                              letterSpacing: -0.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '\$${cultivo.precioPorKg.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: primaryGreen,
-                                ),
-                              ),
-                              const TextSpan(
-                                text: ' / kg',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: textColorMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    // 3. SECCIÓN: CONTACTO
-                    if (hasTelefono || hasEmail) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Divider(height: 1, color: dividerColor),
-                      ),
+                // 2. COLUMNA ORGANIZADA EN SECCIONES
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // --- SECCIÓN 1: TÍTULO Y ESTADO ---
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          if (hasTelefono) ...[
-                            const Icon(Icons.phone_outlined, size: 12, color: textColorMuted),
-                            const SizedBox(width: 5),
-                            Text(
-                              cultivo.telefono!,
+                          Expanded(
+                            child: Text(
+                              cultivo.nombre.isNotEmpty ? cultivo.nombre : 'Sin nombre',
                               style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: textColorMuted,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColorDark,
+                                letterSpacing: -0.2,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
-                          if (hasTelefono && hasEmail)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Text('•', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
-                            ),
-                          if (hasEmail) ...[
-                            const Icon(Icons.mail_outline_rounded, size: 12, color: textColorMuted),
-                            const SizedBox(width: 5),
-                            Expanded(
-                              child: Text(
-                                cultivo.email!,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: textColorMuted,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                          ),
+                          if (cultivo.estado.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            _buildFloatingTag(
+                              label: cultivo.estado.toUpperCase(),
+                              bgColor: const Color(0xFFF1F5F9),
+                              textColor: textColorMuted,
                             ),
                           ],
                         ],
                       ),
+
+                      const SizedBox(height: 6),
+                      const Divider(height: 1, thickness: 1, color: dividerColor),
+                      const SizedBox(height: 8),
+
+                      // --- SECCIÓN 2: TIPO Y PRECIO ---
+                      Row(
+                        children: [
+                          _buildFloatingTag(
+                            label: 'AGRÍCOLA',
+                            bgColor: tagBgAccent,
+                            textColor: tagTextAccent,
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: primaryGreen.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '\$${cultivo.precioPorKg.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: primaryGreen,
+                                    ),
+                                  ),
+                                  const TextSpan(
+                                    text: ' / kg',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: textColorMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // --- SECCIÓN 3: CONTACTO ---
+                      if (hasTelefono || hasEmail) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFF1F5F9)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasTelefono)
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: hasEmail ? 3.0 : 0),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.phone_outlined, size: 12, color: textColorMuted),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        cultivo.telefono!,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                          color: textColorDark,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (hasEmail)
+                                Row(
+                                  children: [
+                                    const Icon(Icons.mail_outline_rounded, size: 12, color: textColorMuted),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        cultivo.email!,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                          color: textColorMuted,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Helper de etiqueta flotante
   Widget _buildFloatingTag({
     required String label,
     required Color bgColor,

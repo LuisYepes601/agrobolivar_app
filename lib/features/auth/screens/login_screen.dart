@@ -6,6 +6,7 @@ import 'package:agro_bolivar/features/auth/models/auth_model/login_request_model
 import 'package:agro_bolivar/features/auth/services/auth_api_service.dart';
 import 'package:agro_bolivar/features/auth/services/auth_local_service.dart';
 import 'package:agro_bolivar/features/auth/screens/register_screen.dart';
+import 'package:agro_bolivar/features/auth/screens/forgot_password_screen.dart'; // <--- Importación agregada
 import 'package:agro_bolivar/features/dashboard/screens/user_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -394,10 +395,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     ),
                                     const SizedBox(height: 8),
 
+                                    // Botón Olvidaste tu contraseña actualizado
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: TextButton(
-                                        onPressed: () {},
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => const ForgotPasswordScreen(),
+                                            ),
+                                          );
+                                        },
                                         child: Text(
                                           '¿Olvidaste tu contraseña?',
                                           style: TextStyle(

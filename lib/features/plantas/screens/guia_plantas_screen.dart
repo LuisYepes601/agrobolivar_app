@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:agro_bolivar/features/especie_planta/model/especie_planta_model.dart';
 import 'package:agro_bolivar/features/especie_planta/services/especie_planta_service.dart';
@@ -31,6 +32,40 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
 
   final TextEditingController _searchController = TextEditingController();
 
+  // Controller y estado para el Hero Carousel
+  late PageController _heroPageController;
+  int _currentHeroPage = 0;
+  Timer? _heroTimer;
+
+  // Lista de items para el Hero con URLs activas de alta resolución
+  final List<Map<String, String>> _heroItems = [
+
+    {
+      'title': 'Guía de Riego Eficiente',
+      'subtitle': 'Optimiza la hidratación según la estación del año.',
+      'tag': 'Recomendado',
+      'image': 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?auto=format&fit=crop&w=800&q=80',
+    },
+    {
+      'title': 'Fertilización Orgánica',
+      'subtitle': 'Abonos recomendados para maximizar la productividad.',
+      'tag': 'Nutrición',
+      'image': 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?auto=format&fit=crop&w=800&q=80',
+    },
+    {
+      'title': 'Control de Plagas',
+      'subtitle': 'Protege tus plantas con métodos ecofriendly y eficientes.',
+      'tag': 'Protección',
+      'image': 'https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&w=800&q=80',
+    },
+    {
+      'title': 'Especies de Bolívar',
+      'subtitle': 'Explora la variedad de cultivos nativos y adaptados de la región.',
+      'tag': 'Catálogo',
+      'image': 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?auto=format&fit=crop&w=800&q=80',
+    },
+  ];
+
   List<PlantaAdminModel> _plantas = [];
   List<EspeciePlantaModel> _especiesList = [];
   List<EstacionModel> _estacionesList = [];
@@ -46,10 +81,8 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
   String? _errorMessage;
   String _searchQuery = '';
 
-  // Filtro de Estado de la Planta ('todos', 'activos', 'inactivos')
   String _filterEstadoPlanta = 'todos';
 
-  // Variables de Estado de Filtros Taxonómicos/Ubicación
   int? _filterIdTipo;
   int? _filterIdFamilia;
   int? _filterIdEspecie;
@@ -58,6 +91,9 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
   @override
   void initState() {
     super.initState();
+    _heroPageController = PageController(viewportFraction: 0.92);
+    _startHeroAutoScroll();
+
     _fetchPlantas();
     _fetchEspeciesList();
     _fetchEstacionesList();
@@ -65,13 +101,27 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
     _fetchFamiliasList();
   }
 
+  void _startHeroAutoScroll() {
+    _heroTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_heroPageController.hasClients) {
+        _currentHeroPage = (_currentHeroPage + 1) % _heroItems.length;
+        _heroPageController.animateToPage(
+          _currentHeroPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _heroTimer?.cancel();
+    _heroPageController.dispose();
     _searchController.dispose();
     super.dispose();
   }
 
-  /// Carga la lista de familias de plantas dinámicamente
   Future<void> _fetchFamiliasList({StateSetter? setModalState}) async {
     if (mounted) {
       setState(() => _isLoadingFamilias = true);
@@ -96,7 +146,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
     }
   }
 
-  /// Carga la lista de tipos de plantas dinámicamente
   Future<void> _fetchTiposList({StateSetter? setModalState}) async {
     if (mounted) {
       setState(() => _isLoadingTipos = true);
@@ -121,7 +170,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
     }
   }
 
-  /// Carga la lista de especies
   Future<void> _fetchEspeciesList({StateSetter? setModalState}) async {
     if (mounted) {
       setState(() => _isLoadingEspecies = true);
@@ -146,7 +194,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
     }
   }
 
-  /// Carga la lista de estaciones dinámicamente
   Future<void> _fetchEstacionesList({StateSetter? setModalState}) async {
     if (mounted) {
       setState(() => _isLoadingEstaciones = true);
@@ -380,6 +427,9 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
           ),
         ),
 
+        // Hero Carrusel de 5 Imágenes
+        _buildHeroCarousel(),
+
         if (_activeFiltersCount > 0) _buildActiveFiltersBar(),
 
         Expanded(
@@ -458,6 +508,151 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
       ),
       body: bodyContent,
       floatingActionButton: fabButton,
+    );
+  }
+
+  /// Widget del Carrusel Hero
+  Widget _buildHeroCarousel() {
+    const primaryColor = Color(0xFF1E4D2B);
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 165,
+          child: PageView.builder(
+            controller: _heroPageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentHeroPage = index;
+              });
+            },
+            itemCount: _heroItems.length,
+            itemBuilder: (context, index) {
+              final item = _heroItems[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Stack(
+                    children: [
+                      // Imagen de Fondo
+                      Image.network(
+                        item['image']!,
+                        height: 165,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: primaryColor.withOpacity(0.1),
+                            child: const Center(
+                              child: Icon(Icons.eco_rounded, size: 48, color: primaryColor),
+                            ),
+                          );
+                        },
+                      ),
+                      // Degradado para mejor contraste de texto
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.15),
+                              Colors.black.withOpacity(0.75),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Contenido Textual
+                      Positioned(
+                        top: 12,
+                        left: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            item['tag']!,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 14,
+                        left: 14,
+                        right: 14,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['title']!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                height: 1.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              item['subtitle']!,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        // Indicadores (Puntos)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_heroItems.length, (index) {
+            final isSelected = _currentHeroPage == index;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              height: 6,
+              width: isSelected ? 18 : 6,
+              decoration: BoxDecoration(
+                color: isSelected ? primaryColor : primaryColor.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 10),
+      ],
     );
   }
 
@@ -545,7 +740,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
     );
   }
 
-  // --- MODAL DE FILTROS ---
   void _showFilterModal() {
     const primaryColor = Color(0xFF1E4D2B);
 
@@ -582,7 +776,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
               height: MediaQuery.of(context).size.height * 0.82,
               child: Column(
                 children: [
-                  // Encabezado del Modal
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: const BoxDecoration(
@@ -629,14 +822,12 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
                     ),
                   ),
 
-                  // Cuerpo del Modal
                   Expanded(
                     child: SingleChildScrollView(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Sección: Estado de la Planta
                           const Text(
                             'Estado de la planta',
                             style: TextStyle(
@@ -672,7 +863,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
 
                           const Divider(height: 28),
 
-                          // Sección: Identificadores Generales
                           const Text(
                             'Identificadores generales',
                             style: TextStyle(
@@ -683,7 +873,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
                           ),
                           const SizedBox(height: 14),
 
-                          // Fila 1: Dropdowns de Especie y Estación
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -844,7 +1033,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
 
                           const SizedBox(height: 14),
 
-                          // Fila 2: Dropdowns de Tipo de Planta y Familia de Planta
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -1009,7 +1197,6 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
                     ),
                   ),
 
-                  // Botón Aplicar Filtros
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(

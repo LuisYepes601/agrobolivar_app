@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:agro_bolivar/features/cultivos/models/cultivo_admin_model.dart';
@@ -18,6 +19,7 @@ class CultivosGeneralScreen extends StatefulWidget {
 
 class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
   static const primaryGreen = Color(0xFF1E4D2B);
+  static const tagBgAccent = Color(0xFFECFDF5);
   static const tagTextAccent = Color(0xFF059669);
   static const backgroundColor = Color(0xFFF8FAFC);
   static const textColorDark = Color(0xFF0F172A);
@@ -28,6 +30,11 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
   final CultivoApiService _cultivoService = CultivoApiService();
   final TextEditingController _searchController = TextEditingController();
 
+  // Controlador y Timer para el carrusel infinito de cultivos
+  late PageController _carouselController;
+  Timer? _carouselTimer;
+  int _currentCarouselPage = 5000; // Índice inicial amplio para scroll infinito en ambas direcciones
+
   List<CultivoAdminModel> _cultivos = [];
   List<CultivoAdminModel> _filteredCultivos = [];
   bool _isLoading = true;
@@ -36,11 +43,30 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
   @override
   void initState() {
     super.initState();
+    _carouselController = PageController(
+      viewportFraction: 0.88,
+      initialPage: _currentCarouselPage,
+    );
+    _startCarouselAutoScroll();
     _fetchCultivos();
+  }
+
+  void _startCarouselAutoScroll() {
+    _carouselTimer?.cancel();
+    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_carouselController.hasClients && _cultivos.isNotEmpty) {
+        _carouselController.nextPage(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    _carouselTimer?.cancel();
+    _carouselController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -52,7 +78,6 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
     });
 
     try {
-      // Se utiliza el nuevo método para la vista general sin filtrar id_usuario
       final response = await _cultivoService.getCultivosGeneral();
 
       if (mounted) {
@@ -119,8 +144,9 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
         backgroundColor: Colors.white,
         child: Column(
           children: [
+            // Buscador
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -143,12 +169,255 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
               ),
             ),
 
+            // Carrusel Infinito de Cultivos (Máximo 10)
+            if (!_isLoading && _errorMessage == null && _cultivos.isNotEmpty)
+              _buildInfiniteCultivosCarousel(),
+
             Expanded(
               child: _buildBodyContent(),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Carrusel Infinito de máximo 10 cultivos
+  Widget _buildInfiniteCultivosCarousel() {
+    // Tomamos hasta un máximo de 10 cultivos para promocionar en el carrusel
+    final topCultivos = _cultivos.take(10).toList();
+    if (topCultivos.isEmpty) return const SizedBox.shrink();
+
+    final activeIndex = _currentCarouselPage % topCultivos.length;
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 165,
+          child: PageView.builder(
+            controller: _carouselController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentCarouselPage = index;
+              });
+            },
+            itemBuilder: (context, rawIndex) {
+              final index = rawIndex % topCultivos.length;
+              final cultivo = topCultivos[index];
+              final hasFoto = cultivo.urlFoto != null && cultivo.urlFoto!.isNotEmpty;
+
+              return GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AdminCultivoDetailScreen(
+                        cultivo: cultivo,
+                        esEditable: false,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      children: [
+                        // Imagen de fondo
+                        hasFoto
+                            ? Image.network(
+                          cultivo.urlFoto!,
+                          height: 165,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          headers: const {'User-Agent': 'Mozilla/5.0'},
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: primaryGreen.withOpacity(0.15),
+                              child: const Center(
+                                child: Icon(Icons.eco_rounded, size: 48, color: primaryGreen),
+                              ),
+                            );
+                          },
+                        )
+                            : Container(
+                          color: primaryGreen.withOpacity(0.15),
+                          child: const Center(
+                            child: Icon(Icons.eco_rounded, size: 48, color: primaryGreen),
+                          ),
+                        ),
+
+                        // Gradiente sombreado para legibilidad
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.2),
+                                Colors.black.withOpacity(0.8),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Badge Destacado Superior
+                        Positioned(
+                          top: 12,
+                          left: 14,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: primaryGreen,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'DESTACADO',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        // Estado del Cultivo
+                        if (cultivo.estado.isNotEmpty)
+                          Positioned(
+                            top: 12,
+                            right: 14,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.55),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                cultivo.estado.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                        // Información Inferior (Nombre y Precio)
+                        Positioned(
+                          bottom: 12,
+                          left: 14,
+                          right: 14,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      cultivo.nombre.isNotEmpty ? cultivo.nombre : 'Sin nombre',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.2,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Text(
+                                      'Disponible en AgroBolívar',
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Contenedor de Precio
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: '\$${cultivo.precioPorKg.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: primaryGreen,
+                                        ),
+                                      ),
+                                      const TextSpan(
+                                        text: ' / kg',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: textColorMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        // Indicadores (Puntos)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(topCultivos.length, (i) {
+            final isSelected = activeIndex == i;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              height: 5,
+              width: isSelected ? 18 : 5,
+              decoration: BoxDecoration(
+                color: isSelected ? primaryGreen : primaryGreen.withOpacity(0.25),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            );
+          }),
+        ),
+
+        const SizedBox(height: 10),
+      ],
     );
   }
 
@@ -230,7 +499,7 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'CULTIVOS DISPONIBLES',
+                'TODOS LOS CULTIVOS',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -239,7 +508,7 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
                 ),
               ),
               Text(
-                '${_filteredCultivos.length} encontrados',
+                '${_filteredCultivos.length} registrados',
                 style: const TextStyle(
                   fontSize: 11,
                   color: textColorMuted,
@@ -261,11 +530,18 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
     final hasEmail = cultivo.email != null && cultivo.email!.isNotEmpty;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: borderColor, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -283,147 +559,169 @@ class _CultivosGeneralScreenState extends State<CultivosGeneralScreen> {
               ),
             );
           },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                    child: Container(
-                      height: 105,
-                      width: double.infinity,
-                      color: const Color(0xFFF1F5F9),
-                      child: hasFoto
-                          ? Image.network(
-                        cultivo.urlFoto!,
-                        fit: BoxFit.cover,
-                      )
-                          : const Center(
-                        child: Icon(
-                          Icons.eco_outlined,
-                          color: textColorMuted,
-                          size: 36,
-                        ),
-                      ),
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Miniatura
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 95,
+                    height: 110,
+                    color: const Color(0xFFF1F5F9),
+                    child: hasFoto
+                        ? Image.network(
+                      cultivo.urlFoto!,
+                      fit: BoxFit.cover,
+                      headers: const {'User-Agent': 'Mozilla/5.0'},
+                      errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.eco_outlined, color: textColorMuted, size: 32),
+                    )
+                        : const Icon(Icons.eco_outlined, color: textColorMuted, size: 32),
                   ),
-                  Positioned(
-                    top: 10,
-                    left: 10,
-                    child: _buildFloatingTag(
-                      label: 'AGRÍCOLA',
-                      bgColor: Colors.white.withOpacity(0.92),
-                      textColor: tagTextAccent,
-                    ),
-                  ),
-                  if (cultivo.estado.isNotEmpty)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: _buildFloatingTag(
-                        label: cultivo.estado.toUpperCase(),
-                        bgColor: Colors.black.withOpacity(0.65),
-                        textColor: Colors.white,
-                      ),
-                    ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            cultivo.nombre.isNotEmpty ? cultivo.nombre : 'Sin nombre',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: textColorDark,
-                              letterSpacing: -0.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: '\$${cultivo.precioPorKg.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: primaryGreen,
-                                ),
-                              ),
-                              const TextSpan(
-                                text: ' / kg',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: textColorMuted,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (hasTelefono || hasEmail) ...[
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Divider(height: 1, color: dividerColor),
-                      ),
+                ),
+                const SizedBox(width: 14),
+
+                // 2. Columna por Secciones
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Encabezado: Nombre + Estado
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          if (hasTelefono) ...[
-                            const Icon(Icons.phone_outlined, size: 12, color: textColorMuted),
-                            const SizedBox(width: 5),
-                            Text(
-                              cultivo.telefono!,
+                          Expanded(
+                            child: Text(
+                              cultivo.nombre.isNotEmpty ? cultivo.nombre : 'Sin nombre',
                               style: const TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: textColorMuted,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: textColorDark,
+                                letterSpacing: -0.2,
                               ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
-                          if (hasTelefono && hasEmail)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 8),
-                              child: Text('•', style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
-                            ),
-                          if (hasEmail) ...[
-                            const Icon(Icons.mail_outline_rounded, size: 12, color: textColorMuted),
-                            const SizedBox(width: 5),
-                            Expanded(
-                              child: Text(
-                                cultivo.email!,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: textColorMuted,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
+                          ),
+                          if (cultivo.estado.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            _buildFloatingTag(
+                              label: cultivo.estado.toUpperCase(),
+                              bgColor: const Color(0xFFF1F5F9),
+                              textColor: textColorMuted,
                             ),
                           ],
                         ],
                       ),
+
+                      const SizedBox(height: 6),
+                      const Divider(height: 1, thickness: 1, color: dividerColor),
+                      const SizedBox(height: 8),
+
+                      // Tipo + Precio
+                      Row(
+                        children: [
+                          _buildFloatingTag(
+                            label: 'AGRÍCOLA',
+                            bgColor: tagBgAccent,
+                            textColor: tagTextAccent,
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: primaryGreen.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: '\$${cultivo.precioPorKg.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: primaryGreen,
+                                    ),
+                                  ),
+                                  const TextSpan(
+                                    text: ' / kg',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                      color: textColorMuted,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      // Contacto
+                      if (hasTelefono || hasEmail) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFF1F5F9)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (hasTelefono)
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: hasEmail ? 3.0 : 0),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.phone_outlined, size: 12, color: textColorMuted),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        cultivo.telefono!,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                          color: textColorDark,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (hasEmail)
+                                Row(
+                                  children: [
+                                    const Icon(Icons.mail_outline_rounded, size: 12, color: textColorMuted),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        cultivo.email!,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w500,
+                                          color: textColorMuted,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

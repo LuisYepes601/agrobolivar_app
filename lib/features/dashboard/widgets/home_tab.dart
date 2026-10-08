@@ -98,7 +98,7 @@ class _HomeTabState extends State<HomeTab> {
           ),
           const SizedBox(height: 14),
 
-          // --- MASONRY GRID (ESTILO PINTEREST CON 2 COLUMNAS Y ALTURAS DESIGUALES) ---
+          // --- MASONRY GRID (ESTILO PINTEREST CON 2 COLUMNAS) ---
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -110,7 +110,7 @@ class _HomeTabState extends State<HomeTab> {
                       title: 'Mis Cultivos',
                       badgeText: '4 Lotes',
                       icon: Icons.grass,
-                      height: 230, // Tarjeta alta
+                      height: 220,
                       autoScrollSeconds: 3,
                       images: const [
                         'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=600&auto=format&fit=crop',
@@ -124,7 +124,7 @@ class _HomeTabState extends State<HomeTab> {
                       title: 'Guía Plantas',
                       badgeText: 'Diagnóstico',
                       icon: Icons.local_florist_outlined,
-                      height: 170, // Tarjeta corta
+                      height: 170,
                       autoScrollSeconds: 5,
                       images: const [
                         'https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=600&auto=format&fit=crop',
@@ -132,6 +132,21 @@ class _HomeTabState extends State<HomeTab> {
                         'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?q=80&w=600&auto=format&fit=crop',
                       ],
                       onTap: () => widget.onSelectTab?.call(4),
+                    ),
+                    const SizedBox(height: 14),
+                    // ⚙️ TARJETA RENOMBRADA: Parámetros del Sistema
+                    _SpotifyCarouselCard(
+                      title: 'Parámetros',
+                      badgeText: 'Configuración',
+                      icon: Icons.tune_rounded,
+                      height: 180,
+                      autoScrollSeconds: 4,
+                      images: const [
+                        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop',
+                        'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=600&auto=format&fit=crop',
+                      ],
+                      onTap: () => widget.onSelectTab?.call(6),
                     ),
                   ],
                 ),
@@ -146,7 +161,7 @@ class _HomeTabState extends State<HomeTab> {
                       title: 'Mis Productos',
                       badgeText: 'Catálogo',
                       icon: Icons.shopping_bag_outlined,
-                      height: 170, // Tarjeta corta
+                      height: 170,
                       autoScrollSeconds: 4,
                       images: const [
                         'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?q=80&w=600&auto=format&fit=crop',
@@ -160,7 +175,7 @@ class _HomeTabState extends State<HomeTab> {
                       title: 'Tienda Agro',
                       badgeText: 'Insumos',
                       icon: Icons.storefront_outlined,
-                      height: 230, // Tarjeta alta
+                      height: 230,
                       autoScrollSeconds: 3,
                       images: const [
                         'https://images.unsplash.com/photo-1589923188900-85dae523342b?q=80&w=600&auto=format&fit=crop',

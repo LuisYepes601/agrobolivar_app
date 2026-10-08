@@ -10,6 +10,9 @@ import 'package:agro_bolivar/features/dashboard/widgets/tienda_tab.dart';
 import 'package:agro_bolivar/features/plantas/screens/guia_plantas_screen.dart';
 import 'package:agro_bolivar/features/perfil/screens/perfil_screen.dart';
 
+// Módulo de Parámetros del Sistema
+import 'package:agro_bolivar/features/parametros/screens/admin_parametros_screen.dart.dart';
+
 import '../widgets/mis_productos_tab.dart';
 
 class UserDashboardScreen extends StatefulWidget {
@@ -50,6 +53,8 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         return 'Guía de Plantas';
       case 5:
         return 'Tienda';
+      case 6:
+        return 'Parámetros del Sistema';
       default:
         return 'AgroBolívar';
     }
@@ -279,6 +284,12 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     title: 'Tienda',
                     index: 5,
                   ),
+                  // ⚙️ SECCIÓN PARÁMETROS DEL SISTEMA
+                  _buildDrawerItem(
+                    icon: Icons.tune_rounded,
+                    title: 'Parámetros',
+                    index: 6,
+                  ),
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.person_outline, color: primaryColor),
@@ -328,6 +339,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           const CultivosGeneralScreen(isTab: true),
           const GuiaPlantasScreen(),
           const TiendaTab(),
+          const AdminParametrosScreen(), // Pantalla de Parámetros
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
