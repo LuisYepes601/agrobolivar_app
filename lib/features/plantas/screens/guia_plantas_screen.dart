@@ -10,6 +10,7 @@ import 'package:agro_bolivar/features/familia_planta/services/familia_planta_ser
 import '../models/planta_admin_model.dart';
 import '../models/planta_model.dart';
 import '../services/planta_service.dart';
+import 'crear_planta_screen.dart';
 import 'planta_detail_screen.dart';
 
 class GuiaPlantasScreen extends StatefulWidget {
@@ -414,8 +415,34 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
       ],
     );
 
+    final fabButton = FloatingActionButton.extended(
+      onPressed: () async {
+        final created = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const CrearPlantaScreen(),
+          ),
+        );
+
+        if (created == true) {
+          _fetchPlantas(nombre: _searchQuery.isEmpty ? null : _searchQuery);
+        }
+      },
+      backgroundColor: primaryColor,
+      shape: const StadiumBorder(),
+      icon: const Icon(Icons.add_rounded, color: Colors.white),
+      label: const Text(
+        'Nueva Planta',
+        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+      ),
+    );
+
     if (widget.isTab) {
-      return Container(color: const Color(0xFFF8FAFC), child: bodyContent);
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: bodyContent,
+        floatingActionButton: fabButton,
+      );
     }
 
     return Scaffold(
@@ -430,6 +457,7 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: bodyContent,
+      floatingActionButton: fabButton,
     );
   }
 
@@ -1166,7 +1194,7 @@ class _GuiaPlantasScreenState extends State<GuiaPlantasScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
                         color: primaryColor.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: primaryColor.withOpacity(0.2), width: 1),
                       ),
                       child: const Row(

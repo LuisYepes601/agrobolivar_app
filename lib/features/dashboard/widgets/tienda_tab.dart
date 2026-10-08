@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:agro_bolivar/features/categorias/models/categoria_model.dart';
 import 'package:agro_bolivar/features/categorias/services/categoria_service.dart';
 import 'package:agro_bolivar/features/marcas/models/marca_model.dart';
@@ -593,7 +593,7 @@ class _TiendaTabState extends State<TiendaTab> {
       backgroundColor: const Color(0xFFFAFAFA),
       body: Column(
         children: [
-          // Barra de Búsqueda
+          // 1. Barra de Búsqueda
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             color: Colors.white,
@@ -601,7 +601,7 @@ class _TiendaTabState extends State<TiendaTab> {
               children: [
                 Expanded(
                   child: Container(
-                    height: 44,
+                    height: 42,
                     decoration: BoxDecoration(
                       color: const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(12),
@@ -609,14 +609,14 @@ class _TiendaTabState extends State<TiendaTab> {
                     child: TextField(
                       controller: _searchController,
                       onChanged: _onSearchChanged,
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 13),
                       decoration: InputDecoration(
                         hintText: 'Buscar producto en la tienda...',
-                        hintStyle: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
-                        prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B), size: 20),
+                        hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                        prefixIcon: const Icon(Icons.search, color: Color(0xFF64748B), size: 18),
                         suffixIcon: _searchController.text.isNotEmpty
                             ? IconButton(
-                          icon: const Icon(Icons.close, size: 16, color: Color(0xFF64748B)),
+                          icon: const Icon(Icons.close, size: 15, color: Color(0xFF64748B)),
                           onPressed: () {
                             _searchController.clear();
                             _onSearchChanged('');
@@ -624,7 +624,7 @@ class _TiendaTabState extends State<TiendaTab> {
                         )
                             : null,
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 10),
                       ),
                     ),
                   ),
@@ -633,8 +633,8 @@ class _TiendaTabState extends State<TiendaTab> {
                 Stack(
                   children: [
                     Container(
-                      height: 44,
-                      width: 44,
+                      height: 42,
+                      width: 42,
                       decoration: BoxDecoration(
                         color: _hasActiveFilters ? const Color(0xFF1E4D2B) : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(12),
@@ -642,7 +642,7 @@ class _TiendaTabState extends State<TiendaTab> {
                       child: IconButton(
                         icon: Icon(
                           Icons.tune_rounded,
-                          size: 20,
+                          size: 18,
                           color: _hasActiveFilters ? Colors.white : const Color(0xFF475569),
                         ),
                         onPressed: _openFilterModal,
@@ -653,8 +653,8 @@ class _TiendaTabState extends State<TiendaTab> {
                         right: 8,
                         top: 8,
                         child: Container(
-                          width: 8,
-                          height: 8,
+                          width: 7,
+                          height: 7,
                           decoration: const BoxDecoration(
                             color: Colors.amber,
                             shape: BoxShape.circle,
@@ -666,6 +666,11 @@ class _TiendaTabState extends State<TiendaTab> {
               ],
             ),
           ),
+
+          // 2. Cinta Marquesina 100% Sin Cortes
+          const CintaAgroBolivar(),
+
+          // 3. Contenido Principal
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E4D2B)))
@@ -676,7 +681,7 @@ class _TiendaTabState extends State<TiendaTab> {
                 children: [
                   Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
                   const SizedBox(height: 12),
-                  Text(_errorMessage!, style: const TextStyle(fontSize: 15, color: Color(0xFF475569))),
+                  Text(_errorMessage!, style: const TextStyle(fontSize: 14, color: Color(0xFF475569))),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => _loadProductos(page: _currentPage),
@@ -694,20 +699,20 @@ class _TiendaTabState extends State<TiendaTab> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.inventory_2_outlined, size: 56, color: Colors.grey.shade400),
-                  const SizedBox(height: 12),
+                  Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey.shade400),
+                  const SizedBox(height: 10),
                   const Text(
                     'No se encontraron productos',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1E293B),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     'Prueba cambiando tus términos de búsqueda o filtros.',
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                 ],
               ),
@@ -715,21 +720,50 @@ class _TiendaTabState extends State<TiendaTab> {
                 : RefreshIndicator(
               onRefresh: () => _loadProductos(page: _currentPage),
               color: const Color(0xFF1E4D2B),
-              child: GridView.builder(
-                padding: const EdgeInsets.all(16),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.58,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Carrusel Destacado Ligero y Legible
+                    CarruselDestacadosSection(
+                      productos: _productos,
+                      onRefreshRequired: () => _loadProductos(page: _currentPage),
+                    ),
+
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(14, 8, 14, 6),
+                      child: Text(
+                        'Todos los Productos',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ),
+
+                    // Cuadrícula Principal
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                        childAspectRatio: 0.74,
+                      ),
+                      itemCount: _productos.length,
+                      itemBuilder: (context, index) {
+                        return ProductoGridCard(
+                          producto: _productos[index],
+                          onRefreshRequired: () => _loadProductos(page: _currentPage),
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                itemCount: _productos.length,
-                itemBuilder: (context, index) {
-                  return ProductoGridCard(
-                    producto: _productos[index],
-                    onRefreshRequired: () => _loadProductos(page: _currentPage),
-                  );
-                },
               ),
             ),
           ),
@@ -741,13 +775,13 @@ class _TiendaTabState extends State<TiendaTab> {
 
   Widget _buildPaginationBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       color: Colors.white,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.chevron_left_rounded, size: 22),
+            icon: const Icon(Icons.chevron_left_rounded, size: 20),
             color: const Color(0xFF1E4D2B),
             onPressed: _currentPage > 0 ? () => _loadProductos(page: _currentPage - 1) : null,
           ),
@@ -755,12 +789,12 @@ class _TiendaTabState extends State<TiendaTab> {
             'Página ${_currentPage + 1} de $_totalPages',
             style: const TextStyle(
               fontWeight: FontWeight.w600,
-              fontSize: 12,
+              fontSize: 11.5,
               color: Color(0xFF64748B),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.chevron_right_rounded, size: 22),
+            icon: const Icon(Icons.chevron_right_rounded, size: 20),
             color: const Color(0xFF1E4D2B),
             onPressed: (_currentPage + 1) < _totalPages ? () => _loadProductos(page: _currentPage + 1) : null,
           ),
@@ -771,7 +805,355 @@ class _TiendaTabState extends State<TiendaTab> {
 }
 
 // ---------------------------------------------------------------------------
-// TARJETA DE PRODUCTO REDISEÑADA CON MICRO-INTERACCIONES + HOVER
+// CINTA MARQUESINA 100% INFINITA (SIN CORTE VISUAL)
+// ---------------------------------------------------------------------------
+class CintaAgroBolivar extends StatefulWidget {
+  const CintaAgroBolivar({super.key});
+
+  @override
+  State<CintaAgroBolivar> createState() => _CintaAgroBolivarState();
+}
+
+class _CintaAgroBolivarState extends State<CintaAgroBolivar>
+    with SingleTickerProviderStateMixin {
+  late final ScrollController _scrollController;
+  late final Ticker _ticker;
+  final GlobalKey _childKey = GlobalKey();
+  double _singleWidth = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+
+    _ticker = createTicker((_) {
+      if (!_scrollController.hasClients || _singleWidth == 0.0) return;
+
+      double newOffset = _scrollController.offset + 0.5;
+
+      if (newOffset >= _singleWidth) {
+        newOffset -= _singleWidth;
+      }
+
+      _scrollController.jumpTo(newOffset);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureWidth();
+      _ticker.start();
+    });
+  }
+
+  void _measureWidth() {
+    final renderBox = _childKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox != null && mounted) {
+      setState(() {
+        _singleWidth = renderBox.size.width;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 24,
+      decoration: const BoxDecoration(
+        color: Color(0xFF1E4D2B),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 3,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      child: IgnorePointer(
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          child: Row(
+            children: [
+              Container(
+                key: _childKey,
+                child: _buildSecuenciaMarquesina(),
+              ),
+              _buildSecuenciaMarquesina(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSecuenciaMarquesina() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(10, (index) {
+        return const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(width: 12),
+            Icon(Icons.grass_rounded, color: Colors.amber, size: 11),
+            SizedBox(width: 5),
+            Text(
+              'AGROBOLÍVAR',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w900,
+                letterSpacing: 1.2,
+              ),
+            ),
+            SizedBox(width: 12),
+            Text(
+              '•',
+              style: TextStyle(
+                color: Colors.amber,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CARRUSEL DESTACADO LIGERAMENTE MÁS ALTO (98 px)
+// ---------------------------------------------------------------------------
+class CarruselDestacadosSection extends StatefulWidget {
+  final List<Producto> productos;
+  final VoidCallback onRefreshRequired;
+
+  const CarruselDestacadosSection({
+    super.key,
+    required this.productos,
+    required this.onRefreshRequired,
+  });
+
+  @override
+  State<CarruselDestacadosSection> createState() => _CarruselDestacadosSectionState();
+}
+
+class _CarruselDestacadosSectionState extends State<CarruselDestacadosSection>
+    with SingleTickerProviderStateMixin {
+  late final ScrollController _scrollController;
+  late final Ticker _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _ticker = createTicker((_) {
+      if (!_scrollController.hasClients || widget.productos.isEmpty) return;
+      _scrollController.jumpTo(_scrollController.offset + 0.6);
+    });
+    _ticker.start();
+  }
+
+  @override
+  void dispose() {
+    _ticker.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.productos.isEmpty) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 4, 12, 2),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFDCFCE7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF86EFAC),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E4D2B).withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Center(
+            child: Text(
+              'Productos Destacados',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+                color: Color(0xFF1E4D2B),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          SizedBox(
+            height: 98, // Ligeramente más alto para mejor legibilidad
+            child: ListView.builder(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              itemBuilder: (context, index) {
+                final producto = widget.productos[index % widget.productos.length];
+                return ProductoDestacadoCard(
+                  producto: producto,
+                  onRefreshRequired: widget.onRefreshRequired,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TARJETA DE PRODUCTO DESTACADO SIN CATEGORÍA NI PRECIO (MAYOR VISIBILIDAD)
+// ---------------------------------------------------------------------------
+class ProductoDestacadoCard extends StatefulWidget {
+  final Producto producto;
+  final VoidCallback? onRefreshRequired;
+
+  const ProductoDestacadoCard({
+    super.key,
+    required this.producto,
+    this.onRefreshRequired,
+  });
+
+  @override
+  State<ProductoDestacadoCard> createState() => _ProductoDestacadoCardState();
+}
+
+class _ProductoDestacadoCardState extends State<ProductoDestacadoCard> {
+  bool _isHovered = false;
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = widget.producto.imgProducto != null && widget.producto.imgProducto!.isNotEmpty;
+    final isHighlighted = _isHovered || _isPressed;
+
+    return Container(
+      width: 88, // Ancho proporcional a la nueva altura
+      margin: const EdgeInsets.symmetric(horizontal: 3.5),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _isHovered = true),
+        onExit: (_) => setState(() => _isHovered = false),
+        child: GestureDetector(
+          onTapDown: (_) => setState(() => _isPressed = true),
+          onTapUp: (_) => setState(() => _isPressed = false),
+          onTapCancel: () => setState(() => _isPressed = false),
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetalleProductoScreen(
+                  productoId: widget.producto.id,
+                  esTienda: true,
+                ),
+              ),
+            );
+            if (widget.onRefreshRequired != null) {
+              widget.onRefreshRequired!();
+            }
+          },
+          child: AnimatedScale(
+            scale: _isPressed ? 0.95 : (_isHovered ? 1.02 : 1.0),
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOutCubic,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isHighlighted ? const Color(0xFF1E4D2B) : const Color(0xFFE2E8F0),
+                  width: isHighlighted ? 1.2 : 1.0,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: isHighlighted
+                        ? const Color(0xFF1E4D2B).withOpacity(0.1)
+                        : const Color(0xFF0F172A).withOpacity(0.03),
+                    blurRadius: isHighlighted ? 4 : 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.all(4.5),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Imagen del producto (Ocupa la mayor parte del espacio)
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: hasImage
+                            ? Image.network(
+                          widget.producto.imgProducto!,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Center(
+                            child: Icon(Icons.eco_outlined, color: Color(0xFF94A3B8), size: 18),
+                          ),
+                        )
+                            : const Center(
+                          child: Icon(Icons.eco_outlined, color: Color(0xFF94A3B8), size: 18),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  // Nombre del producto
+                  Text(
+                    widget.producto.nombre,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TARJETA DE PRODUCTO PARA LA CUADRÍCULA PRINCIPAL
 // ---------------------------------------------------------------------------
 class ProductoGridCard extends StatefulWidget {
   final Producto producto;
@@ -791,49 +1173,9 @@ class _ProductoGridCardState extends State<ProductoGridCard> {
   bool _isHovered = false;
   bool _isPressed = false;
 
-  Future<void> _abrirWhatsApp(BuildContext context, String? telefono, String productoNombre) async {
-    if (telefono == null || telefono.trim().isEmpty) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Este producto no tiene número de contacto registrado.')),
-        );
-      }
-      return;
-    }
-
-    final numLimpio = telefono.replaceAll(RegExp(r'[^\d]'), '');
-    if (numLimpio.isEmpty) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Número de teléfono inválido.')),
-        );
-      }
-      return;
-    }
-
-    final mensaje = Uri.encodeComponent('¡Hola! Me interesa comprar "$productoNombre" que vi en AgroBolívar.');
-    final uri = Uri.parse('https://wa.me/$numLimpio?text=$mensaje');
-
-    try {
-      final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!launched && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No se pudo abrir WhatsApp.')),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al redirigir: $e')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final hasImage = widget.producto.imgProducto != null && widget.producto.imgProducto!.isNotEmpty;
-    final hasDescripcion = widget.producto.descripcion != null && widget.producto.descripcion!.trim().isNotEmpty;
     final categoriaTexto = widget.producto.categoria.isNotEmpty ? widget.producto.categoria : 'General';
     final isHighlighted = _isHovered || _isPressed;
 
@@ -867,139 +1209,86 @@ class _ProductoGridCardState extends State<ProductoGridCard> {
             curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(
                 color: isHighlighted ? const Color(0xFF1E4D2B) : const Color(0xFFF1F5F9),
-                width: isHighlighted ? 1.4 : 1.0,
+                width: isHighlighted ? 1.2 : 1.0,
               ),
               boxShadow: [
                 BoxShadow(
                   color: isHighlighted
-                      ? const Color(0xFF1E4D2B).withOpacity(0.12)
-                      : const Color(0xFF0F172A).withOpacity(0.04),
-                  blurRadius: isHighlighted ? 14 : 8,
-                  offset: const Offset(0, 4),
+                      ? const Color(0xFF1E4D2B).withOpacity(0.1)
+                      : const Color(0xFF0F172A).withOpacity(0.03),
+                  blurRadius: isHighlighted ? 8 : 4,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(6),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Pill de Categoría Alineado a la Izquierda
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    margin: const EdgeInsets.only(bottom: 3),
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E4D2B).withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
                       categoriaTexto,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 10,
+                        fontSize: 8,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF1E4D2B),
-                        letterSpacing: 0.2,
                       ),
                     ),
                   ),
                 ),
-
-                // Imagen del Producto
                 Expanded(
                   child: Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(6),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(6),
                       child: hasImage
                           ? Image.network(
                         widget.producto.imgProducto!,
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => const Center(
-                          child: Icon(Icons.eco_outlined, color: Color(0xFF94A3B8), size: 28),
+                          child: Icon(Icons.eco_outlined, color: Color(0xFF94A3B8), size: 18),
                         ),
                       )
                           : const Center(
-                        child: Icon(Icons.eco_outlined, color: Color(0xFF94A3B8), size: 28),
+                        child: Icon(Icons.eco_outlined, color: Color(0xFF94A3B8), size: 18),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-
-                // Nombre
+                const SizedBox(height: 4),
                 Text(
                   widget.producto.nombre,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 10,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF0F172A),
-                    letterSpacing: -0.2,
                   ),
                 ),
-
-                // Descripción opcional
-                if (hasDescripcion) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    widget.producto.descripcion!,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 4),
-
-                // Precio
                 Text(
                   '\$${widget.producto.precioUnidad.toStringAsFixed(0)}',
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1E4D2B),
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Botón de WhatsApp
-                SizedBox(
-                  width: double.infinity,
-                  height: 32,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF16A34A),
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () => _abrirWhatsApp(
-                      context,
-                      widget.producto.telefono,
-                      widget.producto.nombre,
-                    ),
-                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 13),
-                    label: const Text(
-                      'Comprar',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                   ),
                 ),
               ],

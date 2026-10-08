@@ -10,6 +10,7 @@ import 'package:agro_bolivar/features/genero_planta/models/genero_planta_model.d
 import 'package:agro_bolivar/features/especie_planta/model/especie_planta_model.dart';
 import 'package:agro_bolivar/features/ciclo_germinacion/models/ciclo_germinacion_model.dart';
 import 'package:agro_bolivar/features/ciclo_produccion/models/ciclo_produccion_model.dart';
+import 'package:agro_bolivar/features/estacion_cultivo/models/estacion_cultivo_model.dart';
 
 import '../services/planta_service.dart';
 import 'package:agro_bolivar/features/tipo_planta/services/tipo_planta_service.dart';
@@ -18,6 +19,7 @@ import 'package:agro_bolivar/features/genero_planta/services/genero_planta_servi
 import 'package:agro_bolivar/features/especie_planta/services/especie_planta_service.dart';
 import 'package:agro_bolivar/features/ciclo_germinacion/services/ciclo_germinacion_service.dart';
 import 'package:agro_bolivar/features/ciclo_produccion/services/ciclo_produccion_service.dart';
+import 'package:agro_bolivar/features/estacion_cultivo/services/estacion_cultivo_service.dart';
 
 class PlantaDetailScreen extends StatefulWidget {
   final PlantaAdminModel planta;
@@ -39,6 +41,7 @@ class _PlantaDetailScreenState extends State<PlantaDetailScreen> {
   final EspeciePlantaService _especiePlantaService = EspeciePlantaService();
   final CicloGerminacionService _cicloGerminacionService = CicloGerminacionService();
   final CicloProduccionService _cicloProduccionService = CicloProduccionService();
+  final EstacionCultivoService _estacionCultivoService = EstacionCultivoService();
 
   late Future<PlantaDetailModel> _detailFuture;
 
@@ -893,10 +896,11 @@ class _PlantaDetailScreenState extends State<PlantaDetailScreen> {
   Future<void> _showEditCiclosDialog(PlantaDetailModel detail) async {
     int? selectedCicloGerminacionId = detail.idCicloGerminacion;
     int? selectedCicloProduccionId = detail.idCicloProduccion;
-    final estacionCultivoCtrl = TextEditingController(text: detail.idEstacionCultivo?.toString() ?? '');
+    int? selectedEstacionCultivoId = detail.idEstacionCultivo;
 
     final ciclosGerminacionFuture = _cicloGerminacionService.getCiclosGerminacion();
     final ciclosProduccionFuture = _cicloProduccionService.getCiclosProduccion();
+    final estacionesCultivoFuture = _estacionCultivoService.getEstacionesCultivoAdmin();
 
     final formKey = GlobalKey<FormState>();
     bool isSaving = false;
@@ -1055,13 +1059,68 @@ class _PlantaDetailScreenState extends State<PlantaDetailScreen> {
                         ),
                         const SizedBox(height: 14),
 
-                        TextFormField(
-                          controller: estacionCultivoCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: _buildInputDecoration(
-                            labelText: 'ID Estación Cultivo',
-                            hintText: 'Ej: 1',
-                          ),
+                        // Dropdown dinámico Estación de Cultivo
+                        FutureBuilder<List<EstacionCultivoModel>>(
+                          future: estacionesCultivoFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12.0),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Color(0xFF1E4D2B),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+
+                            if (snapshot.hasError) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 8.0),
+                                child: Text(
+                                  'Error al cargar estaciones de cultivo',
+                                  style: TextStyle(color: Colors.redAccent, fontSize: 13),
+                                ),
+                              );
+                            }
+
+                            final estacionesList = snapshot.data ?? [];
+                            final hasValidSelection = estacionesList.any((e) => e.id == selectedEstacionCultivoId);
+
+                            return DropdownButtonFormField<int>(
+                              value: hasValidSelection ? selectedEstacionCultivoId : null,
+                              isExpanded: true,
+                              decoration: _buildInputDecoration(
+                                labelText: 'Estación de Cultivo',
+                                hintText: 'Selecciona una estación',
+                              ),
+                              items: estacionesList.map((estacion) {
+                                final nombreMostrar = (estacion.nombre != null && estacion.nombre!.isNotEmpty)
+                                    ? estacion.nombre!
+                                    : 'Estación #${estacion.id}';
+                                return DropdownMenuItem<int>(
+                                  value: estacion.id,
+                                  child: Text(
+                                    nombreMostrar,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                setDialogState(() {
+                                  selectedEstacionCultivoId = newValue;
+                                });
+                              },
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -1096,7 +1155,7 @@ class _PlantaDetailScreenState extends State<PlantaDetailScreen> {
                         id: widget.planta.id!,
                         idCicloGerminacion: selectedCicloGerminacionId,
                         idCicloProduccion: selectedCicloProduccionId,
-                        idEstacionCultivo: int.tryParse(estacionCultivoCtrl.text.trim()),
+                        idEstacionCultivo: selectedEstacionCultivoId,
                       );
 
                       if (ctx.mounted) {
@@ -1142,8 +1201,6 @@ class _PlantaDetailScreenState extends State<PlantaDetailScreen> {
         );
       },
     );
-
-    estacionCultivoCtrl.dispose();
   }
 
   /// Diálogo 6: Editar Taxonomía y Clasificación

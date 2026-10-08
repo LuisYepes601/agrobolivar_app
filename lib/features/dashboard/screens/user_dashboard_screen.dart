@@ -8,6 +8,7 @@ import 'package:agro_bolivar/features/cultivos/screens/admin_cultivos_list_scree
 import 'package:agro_bolivar/features/cultivos/screens/cultivos_general_screen.dart';
 import 'package:agro_bolivar/features/dashboard/widgets/tienda_tab.dart';
 import 'package:agro_bolivar/features/plantas/screens/guia_plantas_screen.dart';
+import 'package:agro_bolivar/features/perfil/screens/perfil_screen.dart';
 
 import '../widgets/mis_productos_tab.dart';
 
@@ -35,7 +36,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   UserBasicInfo? _userInfo;
   bool _isLoadingUser = true;
 
-  // Obtener el título dinámicamente según la pantalla visible
   String get _currentAppBarTitle {
     switch (_selectedIndex) {
       case 0:
@@ -94,6 +94,15 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     Navigator.pop(context);
   }
 
+  void _navigateToPerfil() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PerfilScreen(),
+      ),
+    );
+  }
+
   Future<void> _handleLogout(BuildContext context) async {
     if (Navigator.canPop(context)) {
       Navigator.pop(context);
@@ -116,21 +125,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     );
   }
 
-  // Mapea la vista seleccionada hacia la barra inferior
   int _getBottomNavIndex() {
     switch (_selectedIndex) {
       case 0:
-        return 0; // Inicio
+        return 0;
       case 1:
-        return 1; // Mis Productos
+        return 1;
       case 2:
-        return 2; // Mis Cultivos
+        return 2;
       case 4:
-        return 3; // Guía de Plantas
+        return 3;
       case 5:
-        return 4; // Tienda
+        return 4;
       default:
-        return -1; // Cultivos (índice 3) desmarca la barra inferior
+        return -1;
     }
   }
 
@@ -178,15 +186,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: Colors.white24,
-              backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                  ? NetworkImage(photoUrl)
-                  : null,
-              child: (photoUrl == null || photoUrl.isEmpty)
-                  ? const Icon(Icons.person, color: Colors.white, size: 20)
-                  : null,
+            child: GestureDetector(
+              onTap: _navigateToPerfil,
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: Colors.white24,
+                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                    ? NetworkImage(photoUrl)
+                    : null,
+                child: (photoUrl == null || photoUrl.isEmpty)
+                    ? const Icon(Icons.person, color: Colors.white, size: 20)
+                    : null,
+              ),
             ),
           ),
         ],
@@ -195,6 +206,10 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         child: Column(
           children: [
             UserAccountsDrawerHeader(
+              onDetailsPressed: () {
+                Navigator.pop(context);
+                _navigateToPerfil();
+              },
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   colors: [Color(0xFF1E4D2B), Color(0xFF2E7D32)],
@@ -202,14 +217,20 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                   end: Alignment.bottomRight,
                 ),
               ),
-              currentAccountPicture: CircleAvatar(
-                backgroundColor: Colors.white,
-                backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
-                    ? NetworkImage(photoUrl)
-                    : null,
-                child: (photoUrl == null || photoUrl.isEmpty)
-                    ? const Icon(Icons.person, color: primaryColor, size: 40)
-                    : null,
+              currentAccountPicture: GestureDetector(
+                onTap: () {
+                  Navigator.pop(context);
+                  _navigateToPerfil();
+                },
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  backgroundImage: (photoUrl != null && photoUrl.isNotEmpty)
+                      ? NetworkImage(photoUrl)
+                      : null,
+                  child: (photoUrl == null || photoUrl.isEmpty)
+                      ? const Icon(Icons.person, color: primaryColor, size: 40)
+                      : null,
+                ),
               ),
               accountName: Text(
                 _isLoadingUser ? 'Cargando...' : userName,
@@ -258,6 +279,18 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     title: 'Tienda',
                     index: 5,
                   ),
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(Icons.person_outline, color: primaryColor),
+                    title: const Text(
+                      'Mi Perfil',
+                      style: TextStyle(color: Color(0xFF1E293B)),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      _navigateToPerfil();
+                    },
+                  ),
                 ],
               ),
             ),
@@ -285,12 +318,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          const HomeTab(),                                                     // Index 0
-          const MisProductosTab(),                                            // Index 1
-          const AdminCultivosListScreen(isTab: true),                         // Index 2
-          const CultivosGeneralScreen(isTab: true),                           // Index 3
-          const GuiaPlantasScreen(), // Index 4
-          const TiendaTab(),                                                  // Index 5
+          HomeTab(
+            onSelectTab: (index) {
+              setState(() => _selectedIndex = index);
+            },
+          ),
+          const MisProductosTab(),
+          const AdminCultivosListScreen(isTab: true),
+          const CultivosGeneralScreen(isTab: true),
+          const GuiaPlantasScreen(),
+          const TiendaTab(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -310,19 +347,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         onTap: (index) {
           switch (index) {
             case 0:
-              setState(() => _selectedIndex = 0); // Inicio
+              setState(() => _selectedIndex = 0);
               break;
             case 1:
-              setState(() => _selectedIndex = 1); // Mis Productos
+              setState(() => _selectedIndex = 1);
               break;
             case 2:
-              setState(() => _selectedIndex = 2); // Mis Cultivos
+              setState(() => _selectedIndex = 2);
               break;
             case 3:
-              setState(() => _selectedIndex = 4); // Guía de Plantas
+              setState(() => _selectedIndex = 4);
               break;
             case 4:
-              setState(() => _selectedIndex = 5); // Tienda
+              setState(() => _selectedIndex = 5);
               break;
           }
         },
@@ -357,26 +394,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         ),
       ),
       onTap: () => _onSelectItem(index),
-    );
-  }
-
-  Widget _buildPlaceholder(String title, IconData icon) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 64, color: const Color(0xFF1E4D2B).withOpacity(0.5)),
-          const SizedBox(height: 16),
-          Text(
-            'Módulo de $title',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

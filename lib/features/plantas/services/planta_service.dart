@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 
 import '../models/planta_admin_model.dart';
 import '../models/planta_detail_model.dart';
@@ -9,6 +10,63 @@ import '../models/planta_model.dart';
 
 class PlantaService {
   static const String _baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1/plantas/admin';
+
+  /// Crea una nueva planta (`POST /api/v1/plantas/admin`) mediante Multipart/Form-Data
+  Future<bool> crearPlanta({
+    required Map<String, dynamic> body,
+    File? fotoPlanta,
+    String fileFieldName = 'fotoPlanta',
+  }) async {
+    try {
+      final uri = Uri.parse(_baseUrl);
+
+      debugPrint('--> [PlantaService.crearPlanta] POST: $uri');
+      debugPrint('📤 [PlantaService.crearPlanta] Body Map: ${jsonEncode(body)}');
+
+      final request = http.MultipartRequest('POST', uri);
+
+      // 1. Parte JSON 'body' con Content-Type: application/json (@RequestPart("body"))
+      request.files.add(
+        http.MultipartFile.fromString(
+          'body',
+          jsonEncode(body),
+          contentType: MediaType('application', 'json'),
+        ),
+      );
+
+      // 2. Parte de archivo 'fotoPlanta' (@RequestPart("fotoPlanta"))
+      if (fotoPlanta != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath(
+            fileFieldName,
+            fotoPlanta.path,
+          ),
+        );
+      }
+
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Servidor no responde al crear la planta.');
+        },
+      );
+
+      final response = await http.Response.fromStream(streamedResponse);
+
+      debugPrint('<-- [PlantaService.crearPlanta] Status Code: ${response.statusCode}');
+      debugPrint('📦 [PlantaService.crearPlanta] Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        debugPrint('--> [PlantaService] Planta creada con éxito');
+        return true;
+      } else {
+        throw Exception('Error al crear la planta (${response.statusCode}):${response.body}');
+      }
+    } catch (e) {
+      debugPrint('x-- [EXCEPCIÓN PlantaService.crearPlanta]: $e');
+      rethrow;
+    }
+  }
 
   /// Obtiene la lista de plantas para administración mapeando directamente a List<PlantaAdminModel>
   Future<List<PlantaAdminModel>> fetchPlantasAdmin({
