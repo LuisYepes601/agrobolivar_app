@@ -1,3 +1,5 @@
+// lib/features/dashboard/screens/user_dashboard_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:agro_bolivar/features/auth/services/auth_local_service.dart';
 import 'package:agro_bolivar/features/auth/screens/login_screen.dart';
@@ -9,8 +11,6 @@ import 'package:agro_bolivar/features/cultivos/screens/cultivos_general_screen.d
 import 'package:agro_bolivar/features/dashboard/widgets/tienda_tab.dart';
 import 'package:agro_bolivar/features/plantas/screens/guia_plantas_screen.dart';
 import 'package:agro_bolivar/features/perfil/screens/perfil_screen.dart';
-
-// Módulo de Parámetros del Sistema
 import 'package:agro_bolivar/features/parametros/screens/admin_parametros_screen.dart.dart';
 
 import '../widgets/mis_productos_tab.dart';
@@ -130,20 +130,35 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     );
   }
 
-  int _getBottomNavIndex() {
-    switch (_selectedIndex) {
-      case 0:
-        return 0;
-      case 1:
-        return 1;
-      case 2:
-        return 2;
-      case 4:
-        return 3;
-      case 5:
-        return 4;
-      default:
-        return -1;
+  int _getBottomNavIndex(bool isUsuario) {
+    if (isUsuario) {
+      switch (_selectedIndex) {
+        case 0:
+          return 0; // Inicio
+        case 3:
+          return 1; // Cultivos
+        case 4:
+          return 2; // Guía Plantas
+        case 5:
+          return 3; // Tienda
+        default:
+          return -1;
+      }
+    } else {
+      switch (_selectedIndex) {
+        case 0:
+          return 0; // Inicio
+        case 1:
+          return 1; // Mis Productos
+        case 2:
+          return 2; // Mis Cultivos
+        case 4:
+          return 3; // Guía Plantas
+        case 5:
+          return 4; // Tienda
+        default:
+          return -1;
+      }
     }
   }
 
@@ -155,7 +170,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     final userRole = _userInfo?.rol ?? widget.userRole;
     final photoUrl = _userInfo?.fotoPerfil;
 
-    final bottomNavIndex = _getBottomNavIndex();
+    // Normalización de roles para evaluación de accesos (RBAC)
+    final cleanRole = userRole.toUpperCase().replaceAll('ROLE_', '').trim();
+    final isUsuario = cleanRole == 'USUARIO' || cleanRole == 'USER';
+    final isAdmin = cleanRole == 'ADMIN' || cleanRole == 'ADMINISTRADOR';
+
+    // Permisos explícitos:
+    final showMisModulos = !isUsuario; // Admin y Agricultor/Productor
+    final showParametros = isAdmin;    // Únicamente Administrador
+
+    final bottomNavIndex = _getBottomNavIndex(isUsuario);
     final isBottomNavSelected = bottomNavIndex != -1;
 
     return Scaffold(
@@ -259,16 +283,19 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     title: 'Inicio',
                     index: 0,
                   ),
-                  _buildDrawerItem(
-                    icon: Icons.shopping_bag_outlined,
-                    title: 'Mis Productos',
-                    index: 1,
-                  ),
-                  _buildDrawerItem(
-                    icon: Icons.grass_outlined,
-                    title: 'Mis Cultivos',
-                    index: 2,
-                  ),
+                  // 'Mis Productos' y 'Mis Cultivos' para ADMIN o AGRICULTOR/PRODUCTOR
+                  if (showMisModulos) ...[
+                    _buildDrawerItem(
+                      icon: Icons.shopping_bag_outlined,
+                      title: 'Mis Productos',
+                      index: 1,
+                    ),
+                    _buildDrawerItem(
+                      icon: Icons.grass_outlined,
+                      title: 'Mis Cultivos',
+                      index: 2,
+                    ),
+                  ],
                   _buildDrawerItem(
                     icon: Icons.eco_outlined,
                     title: 'Cultivos',
@@ -284,12 +311,13 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     title: 'Tienda',
                     index: 5,
                   ),
-                  // ⚙️ SECCIÓN PARÁMETROS DEL SISTEMA
-                  _buildDrawerItem(
-                    icon: Icons.tune_rounded,
-                    title: 'Parámetros',
-                    index: 6,
-                  ),
+                  // 'Parámetros' se muestra ÚNICAMENTE a ADMIN
+                  if (showParametros)
+                    _buildDrawerItem(
+                      icon: Icons.tune_rounded,
+                      title: 'Parámetros',
+                      index: 6,
+                    ),
                   const Divider(),
                   ListTile(
                     leading: const Icon(Icons.person_outline, color: primaryColor),
@@ -330,6 +358,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         index: _selectedIndex,
         children: [
           HomeTab(
+            userRole: userRole,
             onSelectTab: (index) {
               setState(() => _selectedIndex = index);
             },
@@ -339,7 +368,7 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           const CultivosGeneralScreen(isTab: true),
           const GuiaPlantasScreen(),
           const TiendaTab(),
-          const AdminParametrosScreen(), // Pantalla de Parámetros
+          const AdminParametrosScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -357,25 +386,49 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
         ),
         type: BottomNavigationBarType.fixed,
         onTap: (index) {
-          switch (index) {
-            case 0:
-              setState(() => _selectedIndex = 0);
-              break;
-            case 1:
-              setState(() => _selectedIndex = 1);
-              break;
-            case 2:
-              setState(() => _selectedIndex = 2);
-              break;
-            case 3:
-              setState(() => _selectedIndex = 4);
-              break;
-            case 4:
-              setState(() => _selectedIndex = 5);
-              break;
+          if (isUsuario) {
+            switch (index) {
+              case 0:
+                setState(() => _selectedIndex = 0); // Inicio
+                break;
+              case 1:
+                setState(() => _selectedIndex = 3); // Cultivos
+                break;
+              case 2:
+                setState(() => _selectedIndex = 4); // Guía Plantas
+                break;
+              case 3:
+                setState(() => _selectedIndex = 5); // Tienda
+                break;
+            }
+          } else {
+            switch (index) {
+              case 0:
+                setState(() => _selectedIndex = 0);
+                break;
+              case 1:
+                setState(() => _selectedIndex = 1);
+                break;
+              case 2:
+                setState(() => _selectedIndex = 2);
+                break;
+              case 3:
+                setState(() => _selectedIndex = 4);
+                break;
+              case 4:
+                setState(() => _selectedIndex = 5);
+                break;
+            }
           }
         },
-        items: const [
+        items: isUsuario
+            ? const [
+          BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'Inicio'),
+          BottomNavigationBarItem(icon: Icon(Icons.eco_outlined), label: 'Cultivos'),
+          BottomNavigationBarItem(icon: Icon(Icons.local_florist_outlined), label: 'Guía Plantas'),
+          BottomNavigationBarItem(icon: Icon(Icons.storefront_outlined), label: 'Tienda'),
+        ]
+            : const [
           BottomNavigationBarItem(icon: Icon(Icons.grid_view), label: 'Inicio'),
           BottomNavigationBarItem(icon: Icon(Icons.shopping_bag_outlined), label: 'Productos'),
           BottomNavigationBarItem(icon: Icon(Icons.grass), label: 'Mis Cultivos'),

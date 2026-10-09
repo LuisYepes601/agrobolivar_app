@@ -1,3 +1,5 @@
+// lib/features/estaciones_cultivo/services/estacion_service.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/estacion_model.dart';
@@ -50,6 +52,68 @@ class EstacionService {
       print('📍 STACKTRACE:\n$stackTrace');
       print('==================================================');
       rethrow;
+    }
+  }
+
+  /// Crea una nueva estación de cultivo (POST /api/v1/estacion-cultivos/admin)
+  Future<bool> crearEstacion(Map<String, dynamic> data) async {
+    final uri = Uri.parse(baseUrl);
+
+    print('🚀 [EstacionService] Creando estación en: $uri');
+    print('📦 Body: ${jsonEncode(data)}');
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+
+      print('📊 STATUS CODE POST: ${response.statusCode}');
+      print('📦 RESPONSE BODY: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Estación de cultivo creada con éxito');
+        return true;
+      } else {
+        print('⚠️ Error HTTP ${response.statusCode}: ${response.body}');
+        return false;
+      }
+    } catch (e, stackTrace) {
+      print('❌ EXCEPCIÓN EN crearEstacion: $e');
+      print('📍 STACKTRACE:\n$stackTrace');
+      return false;
+    }
+  }
+
+  /// Actualiza una estación de cultivo existente (PUT /api/v1/estacion-cultivos/admin/{id})
+  Future<bool> actualizarEstacion(dynamic id, Map<String, dynamic> data) async {
+    final uri = Uri.parse('$baseUrl/$id');
+
+    print('🚀 [EstacionService] Actualizando estación en: $uri');
+    print('📦 Body: ${jsonEncode(data)}');
+
+    try {
+      final response = await http.put(
+        uri,
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+
+      print('📊 STATUS CODE PUT: ${response.statusCode}');
+      print('📦 RESPONSE BODY: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('✅ Estación de cultivo actualizada con éxito');
+        return true;
+      } else {
+        print('⚠️ Error HTTP ${response.statusCode}: ${response.body}');
+        return false;
+      }
+    } catch (e, stackTrace) {
+      print('❌ EXCEPCIÓN EN actualizarEstacion: $e');
+      print('📍 STACKTRACE:\n$stackTrace');
+      return false;
     }
   }
 }

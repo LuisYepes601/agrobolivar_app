@@ -1,3 +1,5 @@
+// lib/features/auth/screens/login_screen.dart
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -6,7 +8,7 @@ import 'package:agro_bolivar/features/auth/models/auth_model/login_request_model
 import 'package:agro_bolivar/features/auth/services/auth_api_service.dart';
 import 'package:agro_bolivar/features/auth/services/auth_local_service.dart';
 import 'package:agro_bolivar/features/auth/screens/register_screen.dart';
-import 'package:agro_bolivar/features/auth/screens/forgot_password_screen.dart'; // <--- Importación agregada
+import 'package:agro_bolivar/features/auth/screens/forgot_password_screen.dart';
 import 'package:agro_bolivar/features/dashboard/screens/user_dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -137,15 +139,16 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
         final response = await _authApiService.login(request);
 
+        // Guardado de la sesión en almacenamiento local (id, email y rol)
         await _authLocalService.saveSession(
           id: response.id,
           email: response.email,
-          role: response.role,
+          role: response.rol,
         );
 
         if (!mounted) return;
 
-        final cleanRole = response.role
+        final cleanRole = response.rol
             .toUpperCase()
             .replaceAll('ROLE_', '')
             .trim();
@@ -156,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             MaterialPageRoute(
               builder: (context) => UserDashboardScreen(
                 userEmail: response.email,
-                userRole: response.role,
+                userRole: response.rol,
               ),
             ),
           );
@@ -173,7 +176,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             MaterialPageRoute(
               builder: (context) => UserDashboardScreen(
                 userEmail: response.email,
-                userRole: response.role,
+                userRole: response.rol,
               ),
             ),
           );
@@ -395,7 +398,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     ),
                                     const SizedBox(height: 8),
 
-                                    // Botón Olvidaste tu contraseña actualizado
                                     Align(
                                       alignment: Alignment.centerRight,
                                       child: TextButton(
@@ -450,7 +452,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                                     ),
                                     const SizedBox(height: 20),
 
-                                    // Redirección a Registro
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [

@@ -7,6 +7,13 @@ import 'package:agro_bolivar/features/unidades_area/screens/unidad_area_screen.d
 import 'package:agro_bolivar/features/unidades_peso/screens/unidades_peso_screen.dart';
 import 'package:agro_bolivar/features/tipo_planta/screens/tipo_planta_screen.dart';
 import 'package:agro_bolivar/features/tipo_documento/screens/tipo_documento_screen.dart';
+import 'package:agro_bolivar/features/rol/screens/roles_screen.dart';
+import 'package:agro_bolivar/features/marcas/screens/marcas_screen.dart';
+import 'package:agro_bolivar/features/genero_planta/screens/genero_planta_screen.dart';
+import 'package:agro_bolivar/features/familia_planta/screens/familia_planta_screen.dart';
+import 'package:agro_bolivar/features/estaciones/screens/estaciones_cultivo_screen.dart';
+import 'package:agro_bolivar/features/especie_planta/screens/especies_planta_screen.dart';
+import 'package:agro_bolivar/features/ciclo_produccion/screens/ciclos_produccion_screen.dart';
 
 class AdminParametrosScreen extends StatefulWidget {
   const AdminParametrosScreen({super.key});
@@ -55,6 +62,41 @@ class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
       'nombre': 'Tipo de Documento',
       'plural': 'Tipos de Documento',
       'icon': Icons.badge_outlined,
+    },
+    {
+      'nombre': 'Rol',
+      'plural': 'Roles',
+      'icon': Icons.admin_panel_settings_outlined,
+    },
+    {
+      'nombre': 'Marca',
+      'plural': 'Marcas',
+      'icon': Icons.sell_outlined,
+    },
+    {
+      'nombre': 'Género de Planta',
+      'plural': 'Géneros de Planta',
+      'icon': Icons.park_outlined,
+    },
+    {
+      'nombre': 'Familia de Planta',
+      'plural': 'Familias de Planta',
+      'icon': Icons.local_florist_outlined,
+    },
+    {
+      'nombre': 'Estación de Cultivo',
+      'plural': 'Estaciones de Cultivo',
+      'icon': Icons.wb_sunny_outlined,
+    },
+    {
+      'nombre': 'Especie de Planta',
+      'plural': 'Especies de Planta',
+      'icon': Icons.grass_outlined,
+    },
+    {
+      'nombre': 'Ciclo de Producción',
+      'plural': 'Ciclos de Producción',
+      'icon': Icons.sync_rounded,
     },
   ];
 
@@ -251,6 +293,20 @@ class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
         return const TiposPlantaScreen();
       case 6:
         return const TipoDocumentoScreen();
+      case 7:
+        return const RolesScreen();
+      case 8:
+        return const MarcasScreen();
+      case 9:
+        return const GenerosPlantaScreen();
+      case 10:
+        return const FamiliasPlantaScreen();
+      case 11:
+        return const EstacionesCultivoScreen();
+      case 12:
+        return const EspeciesPlantaScreen();
+      case 13:
+        return const CiclosProduccionScreen();
       default:
         return _ModuloEnConstruccion(entidadNombre: nombreEntidad);
     }

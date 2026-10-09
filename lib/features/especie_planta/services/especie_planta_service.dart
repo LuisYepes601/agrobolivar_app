@@ -1,3 +1,5 @@
+// lib/features/especie_planta/services/especie_planta_service.dart
+
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:agro_bolivar/features/especie_planta/model/especie_planta_model.dart';
@@ -10,7 +12,7 @@ class EspeciePlantaService {
     'Accept': 'application/json',
   };
 
-  /// Obtiene la lista de especies de planta con impresión de logs en consola
+  /// Obtiene la lista de especies de planta
   Future<List<EspeciePlantaModel>> fetchEspecies({String? nombre}) async {
     final queryParams = <String, String>{};
     if (nombre != null && nombre.isNotEmpty) queryParams['nombre'] = nombre;
@@ -19,7 +21,6 @@ class EspeciePlantaService {
 
     print('================ [EspeciePlantaService] ================');
     print('🌐 REQUEST URL: $uri');
-    print('🔑 HEADERS: $_headers');
 
     try {
       final response = await http.get(uri, headers: _headers);
@@ -30,18 +31,15 @@ class EspeciePlantaService {
 
       if (response.statusCode == 200) {
         final dynamic decodedData = jsonDecode(response.body);
-
         List<dynamic> listData = [];
 
         if (decodedData is List) {
           listData = decodedData;
         } else if (decodedData is Map<String, dynamic>) {
-          // Soporte si la respuesta es paginada ({ "content": [...] } o { "data": [...] })
           listData = decodedData['content'] ?? decodedData['data'] ?? [];
         }
 
         final especies = listData.map((json) => EspeciePlantaModel.fromJson(json)).toList();
-        print('✅ ESPECIES OBTENIDAS CON ÉXITO: ${especies.length} elementos.');
         return especies;
       } else {
         throw Exception(
@@ -50,79 +48,69 @@ class EspeciePlantaService {
     } catch (e, stackTrace) {
       print('❌ EXCEPCIÓN CAPTURADA: $e');
       print('📍 STACKTRACE:\n$stackTrace');
-      print('======================================================');
       rethrow;
     }
   }
 
-  /// Obtiene una especie por su ID
-  Future<EspeciePlantaModel> getEspecieById(int id) async {
-    final url = Uri.parse('$baseUrl/$id');
+  /// Crea una nueva especie de planta (POST /api/v1/especies-plantas/admin)
+  Future<bool> crearEspecie(Map<String, dynamic> data) async {
+    final uri = Uri.parse(baseUrl);
 
-    try {
-      final response = await http.get(url, headers: _headers);
-
-      if (response.statusCode == 200) {
-        return EspeciePlantaModel.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception('Especie no encontrada ID: $id');
-      }
-    } catch (e) {
-      throw Exception('Error de conexión: $e');
-    }
-  }
-
-  /// Crea una nueva especie de planta
-  Future<EspeciePlantaModel> createEspecie(EspeciePlantaModel especie) async {
-    final url = Uri.parse(baseUrl);
+    print('🚀 [EspeciePlantaService] Creando especie en: $uri');
+    print('📦 Body: ${jsonEncode(data)}');
 
     try {
       final response = await http.post(
-        url,
+        uri,
         headers: _headers,
-        body: jsonEncode(especie.toJson()),
+        body: jsonEncode(data),
       );
 
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return EspeciePlantaModel.fromJson(jsonDecode(response.body));
+      print('📊 STATUS CODE POST: ${response.statusCode}');
+      print('📦 RESPONSE BODY: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('✅ Especie de planta creada con éxito');
+        return true;
       } else {
-        throw Exception('Error al crear la especie: ${response.statusCode}');
+        print('⚠️ Error HTTP ${response.statusCode}: ${response.body}');
+        return false;
       }
-    } catch (e) {
-      throw Exception('Error al enviar datos: $e');
+    } catch (e, stackTrace) {
+      print('❌ EXCEPCIÓN EN crearEspecie: $e');
+      print('📍 STACKTRACE:\n$stackTrace');
+      return false;
     }
   }
 
-  /// Actualiza una especie existente
-  Future<EspeciePlantaModel> updateEspecie(int id, EspeciePlantaModel especie) async {
-    final url = Uri.parse('$baseUrl/$id');
+  /// Actualiza una especie de planta existente (PUT /api/v1/especies-plantas/admin/{id})
+  Future<bool> actualizarEspecie(dynamic id, Map<String, dynamic> data) async {
+    final uri = Uri.parse('$baseUrl/$id');
+
+    print('🚀 [EspeciePlantaService] Actualizando especie en: $uri');
+    print('📦 Body: ${jsonEncode(data)}');
 
     try {
       final response = await http.put(
-        url,
+        uri,
         headers: _headers,
-        body: jsonEncode(especie.toJson()),
+        body: jsonEncode(data),
       );
 
-      if (response.statusCode == 200) {
-        return EspeciePlantaModel.fromJson(jsonDecode(response.body));
+      print('📊 STATUS CODE PUT: ${response.statusCode}');
+      print('📦 RESPONSE BODY: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('✅ Especie de planta actualizada con éxito');
+        return true;
       } else {
-        throw Exception('Error al actualizar la especie: ${response.statusCode}');
+        print('⚠️ Error HTTP ${response.statusCode}: ${response.body}');
+        return false;
       }
-    } catch (e) {
-      throw Exception('Error al actualizar datos: $e');
-    }
-  }
-
-  /// Elimina una especie por ID
-  Future<bool> deleteEspecie(int id) async {
-    final url = Uri.parse('$baseUrl/$id');
-
-    try {
-      final response = await http.delete(url, headers: _headers);
-      return response.statusCode == 200 || response.statusCode == 204;
-    } catch (e) {
-      throw Exception('Error al eliminar especie: $e');
+    } catch (e, stackTrace) {
+      print('❌ EXCEPCIÓN EN actualizarEspecie: $e');
+      print('📍 STACKTRACE:\n$stackTrace');
+      return false;
     }
   }
 }

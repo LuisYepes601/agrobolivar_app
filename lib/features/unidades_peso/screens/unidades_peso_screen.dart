@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:agro_bolivar/features/unidades_peso/models/unidad_peso_model.dart';
 import 'package:agro_bolivar/features/unidades_peso/services/unidad_peso_service.dart';
@@ -19,20 +20,61 @@ class UnidadesPesoScreen extends StatefulWidget {
 class _UnidadesPesoScreenState extends State<UnidadesPesoScreen> {
   late final UnidadPesoService _service;
   final TextEditingController _searchController = TextEditingController();
+  final PageController _pageController = PageController();
 
   List<UnidadPeso> _unidadesPeso = [];
   bool _isLoading = false;
   String _searchQuery = '';
+  int _currentHeroIndex = 0;
+  Timer? _carouselTimer;
+
+  // Datos para el carrusel Hero (3 Contextos de Unidades de Peso)
+  final List<Map<String, String>> _heroItems = const [
+    {
+      'titulo': 'Pesaje de Cosechas',
+      'subtitulo': 'Control preciso del peso de la producción agrícola en kilogramos y toneladas.',
+      'image': 'https://images.unsplash.com/photo-1595246140625-573b715d11dc?auto=format&fit=crop&w=800&q=80',
+      'badge': 'PRODUCCIÓN',
+    },
+    {
+      'titulo': 'Dosificación de Insumos',
+      'subtitulo': 'Medición exacta de fertilizantes y nutrientes en gramos o libras.',
+      'image': 'https://images.unsplash.com/photo-1628352081506-83c43123ed6d?auto=format&fit=crop&w=800&q=80',
+      'badge': 'INSUMOS',
+    },
+    {
+      'titulo': 'Comercialización y Venta',
+      'subtitulo': 'Estandarización de cargas masivas para empaque y despacho al mercado.',
+      'image': 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80',
+      'badge': 'COMERCIO',
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
     _service = widget.service ?? UnidadPesoService();
     _cargarUnidadesPeso();
+    _startAutoPlay();
+  }
+
+  void _startAutoPlay() {
+    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_pageController.hasClients) {
+        final nextPage = (_currentHeroIndex + 1) % _heroItems.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    _carouselTimer?.cancel();
+    _pageController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -252,93 +294,212 @@ class _UnidadesPesoScreenState extends State<UnidadesPesoScreen> {
       body: RefreshIndicator(
         onRefresh: _cargarUnidadesPeso,
         color: UnidadesPesoScreen.primaryGreen,
-        child: Column(
-          children: [
-            // BARRA DE BÚSQUEDA
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (val) => setState(() => _searchQuery = val),
-                decoration: InputDecoration(
-                  hintText: 'Buscar unidad de peso...',
-                  hintStyle: const TextStyle(color: Color(0xFF888888), fontSize: 14),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: Color(0xFF666666),
-                    size: 20,
-                  ),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: 18),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.8),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.8),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: UnidadesPesoScreen.primaryGreen,
-                      width: 1.5,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // --- CARRUSEL HERO ---
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 160,
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() => _currentHeroIndex = index);
+                  },
+                  itemCount: _heroItems.length,
+                  itemBuilder: (context, index) {
+                    final item = _heroItems[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Image.network(
+                                item['image']!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(color: UnidadesPesoScreen.primaryGreen),
+                              ),
+                            ),
+                            // Overlay degradado para legibilidad del texto
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black.withOpacity(0.2),
+                                      Colors.black.withOpacity(0.85),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Contenido
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: UnidadesPesoScreen.primaryGreen,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      item['badge']!,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    item['titulo']!,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    item['subtitulo']!,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Indicadores del carrusel
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_heroItems.length, (index) {
+                  final isSelected = _currentHeroIndex == index;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    height: 6,
+                    width: isSelected ? 18 : 6,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? UnidadesPesoScreen.primaryGreen
+                          : Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  );
+                }),
+              ),
+
+              // BARRA DE BÚSQUEDA
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (val) => setState(() => _searchQuery = val),
+                  decoration: InputDecoration(
+                    hintText: 'Buscar unidad de peso...',
+                    hintStyle: const TextStyle(color: Color(0xFF888888), fontSize: 14),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFF666666),
+                      size: 20,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.8),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: const BorderSide(
+                        color: UnidadesPesoScreen.primaryGreen,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            // LISTADO DE UNIDADES
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                child: CircularProgressIndicator(
-                  color: UnidadesPesoScreen.primaryGreen,
+              // LISTADO DE UNIDADES
+              _isLoading
+                  ? const Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: UnidadesPesoScreen.primaryGreen,
+                  ),
                 ),
               )
                   : list.isEmpty
-                  ? ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.4,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.scale_outlined,
-                            size: 48,
-                            color: Color(0xFFCCCCCC),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _searchQuery.isEmpty
-                                ? 'No hay unidades de peso registradas'
-                                : 'No se encontraron resultados',
-                            style: const TextStyle(
-                              color: Color(0xFF666666),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                  ? SizedBox(
+                height: 250,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.scale_outlined,
+                        size: 48,
+                        color: Color(0xFFCCCCCC),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _searchQuery.isEmpty
+                            ? 'No hay unidades de peso registradas'
+                            : 'No se encontraron resultados',
+                        style: const TextStyle(
+                          color: Color(0xFF666666),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               )
                   : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                 itemCount: list.length,
                 itemBuilder: (context, index) {
@@ -349,8 +510,8 @@ class _UnidadesPesoScreenState extends State<UnidadesPesoScreen> {
                   );
                 },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

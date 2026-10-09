@@ -1,12 +1,12 @@
 class AuthResponseModel {
   final String id;
   final String email;
-  final String role;
+  final String rol;
 
   AuthResponseModel({
     required this.id,
     required this.email,
-    required this.role,
+    required this.rol,
   });
 
   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
@@ -18,7 +18,7 @@ class AuthResponseModel {
     return AuthResponseModel(
       id: (userMap['id'] ?? json['id'])?.toString() ?? '',
       email: userMap['email'] ?? json['email'] ?? '',
-      role: userMap['role'] ?? json['role'] ?? 'user',
+      rol: userMap['rol'] ?? json['rol'] ?? userMap['role'] ?? json['role'] ?? 'user',
     );
   }
 
@@ -26,7 +26,7 @@ class AuthResponseModel {
     return {
       'id': id,
       'email': email,
-      'role': role,
+      'rol': rol,
     };
   }
 }

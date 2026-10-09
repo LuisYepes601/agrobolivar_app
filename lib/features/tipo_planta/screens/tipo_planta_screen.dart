@@ -1,3 +1,6 @@
+// lib/features/tipo_planta/screens/tipo_planta_screen.dart
+
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:agro_bolivar/features/tipo_planta/models/tipo_planta_model.dart';
 import 'package:agro_bolivar/features/tipo_planta/services/tipo_planta_service.dart';
@@ -19,20 +22,61 @@ class TiposPlantaScreen extends StatefulWidget {
 class _TiposPlantaScreenState extends State<TiposPlantaScreen> {
   late final TipoPlantaService _service;
   final TextEditingController _searchController = TextEditingController();
+  final PageController _pageController = PageController();
 
   List<TipoPlantaModel> _tiposPlanta = [];
   bool _isLoading = false;
   String _searchQuery = '';
+  int _currentHeroIndex = 0;
+  Timer? _carouselTimer;
+
+  // Datos para el carrusel Hero (URLs de imágenes para hortalizas, frutales y cereales)
+  final List<Map<String, String>> _heroItems = const [
+    {
+      'titulo': 'Cultivos Hortícolas',
+      'subtitulo': 'Hortalizas y verduras de ciclo corto con alta exigencia de nutrición.',
+      'image': 'https://images.unsplash.com/photo-1566385101042-1a0aa0c1268c?auto=format&fit=crop&w=800&q=80',
+      'badge': 'HORTALIZAS',
+    },
+    {
+      'titulo': 'Especies Frutales',
+      'subtitulo': 'Árboles y arbustos de producción estacional y rendimiento perenne.',
+      'image': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=800&q=80',
+      'badge': 'FRUTALES',
+    },
+    {
+      'titulo': 'Cereales y Granos',
+      'subtitulo': 'Cultivos extensivos fundamentales para la producción agropecuaria.',
+      'image': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?auto=format&fit=crop&w=800&q=80',
+      'badge': 'CEREALES',
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
     _service = widget.service ?? TipoPlantaService();
     _cargarTiposPlanta();
+    _startAutoPlay();
+  }
+
+  void _startAutoPlay() {
+    _carouselTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_pageController.hasClients) {
+        final nextPage = (_currentHeroIndex + 1) % _heroItems.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
+    _carouselTimer?.cancel();
+    _pageController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -252,93 +296,228 @@ class _TiposPlantaScreenState extends State<TiposPlantaScreen> {
       body: RefreshIndicator(
         onRefresh: _cargarTiposPlanta,
         color: TiposPlantaScreen.primaryGreen,
-        child: Column(
-          children: [
-            // BARRA DE BÚSQUEDA
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: TextField(
-                controller: _searchController,
-                onChanged: (val) => setState(() => _searchQuery = val),
-                decoration: InputDecoration(
-                  hintText: 'Buscar tipo de planta...',
-                  hintStyle: const TextStyle(color: Color(0xFF888888), fontSize: 14),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: Color(0xFF666666),
-                    size: 20,
-                  ),
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
-                    icon: const Icon(Icons.clear_rounded, size: 18),
-                    onPressed: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  )
-                      : null,
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.8),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.8),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(24),
-                    borderSide: const BorderSide(
-                      color: TiposPlantaScreen.primaryGreen,
-                      width: 1.5,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              // --- CARRUSEL HERO ---
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 160,
+                child: PageView.builder(
+                  controller: _pageController,
+                  onPageChanged: (index) {
+                    setState(() => _currentHeroIndex = index);
+                  },
+                  itemCount: _heroItems.length,
+                  itemBuilder: (context, index) {
+                    final item = _heroItems[index];
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Image.network(
+                                item['image']!,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, loadingProgress) {
+                                  if (loadingProgress == null) return child;
+                                  return Container(
+                                    color: TiposPlantaScreen.primaryGreen.withOpacity(0.15),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        color: TiposPlantaScreen.primaryGreen,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) => Container(
+                                  color: TiposPlantaScreen.primaryGreen,
+                                  child: const Center(
+                                    child: Icon(Icons.eco_rounded, color: Colors.white, size: 40),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Overlay degradado para legibilidad del texto
+                            Positioned.fill(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [
+                                      Colors.black.withOpacity(0.2),
+                                      Colors.black.withOpacity(0.85),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Contenido informativo
+                            Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: TiposPlantaScreen.primaryGreen,
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      item['badge']!,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    item['titulo']!,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    item['subtitulo']!,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Indicadores del carrusel
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(_heroItems.length, (index) {
+                  final isSelected = _currentHeroIndex == index;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    height: 6,
+                    width: isSelected ? 18 : 6,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? TiposPlantaScreen.primaryGreen
+                          : Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  );
+                }),
+              ),
+
+              // BARRA DE BÚSQUEDA
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (val) => setState(() => _searchQuery = val),
+                  decoration: InputDecoration(
+                    hintText: 'Buscar tipo de planta...',
+                    hintStyle: const TextStyle(color: Color(0xFF888888), fontSize: 14),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Color(0xFF666666),
+                      size: 20,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                        : null,
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.8),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 0.8),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide: const BorderSide(
+                        color: TiposPlantaScreen.primaryGreen,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            // LISTADO DE TIPOS DE PLANTA
-            Expanded(
-              child: _isLoading
-                  ? const Center(
-                child: CircularProgressIndicator(
-                  color: TiposPlantaScreen.primaryGreen,
+              // LISTADO DE TIPOS DE PLANTA
+              _isLoading
+                  ? const Padding(
+                padding: EdgeInsets.all(40),
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: TiposPlantaScreen.primaryGreen,
+                  ),
                 ),
               )
                   : list.isEmpty
-                  ? ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                children: [
-                  SizedBox(
-                    height: MediaQuery.of(context).size.height * 0.4,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.eco_outlined,
-                            size: 48,
-                            color: Color(0xFFCCCCCC),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _searchQuery.isEmpty
-                                ? 'No hay tipos de planta registrados'
-                                : 'No se encontraron resultados',
-                            style: const TextStyle(
-                              color: Color(0xFF666666),
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
+                  ? SizedBox(
+                height: 250,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.eco_outlined,
+                        size: 48,
+                        color: Color(0xFFCCCCCC),
                       ),
-                    ),
+                      const SizedBox(height: 12),
+                      Text(
+                        _searchQuery.isEmpty
+                            ? 'No hay tipos de planta registrados'
+                            : 'No se encontraron resultados',
+                        style: const TextStyle(
+                          color: Color(0xFF666666),
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               )
                   : ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                 itemCount: list.length,
                 itemBuilder: (context, index) {
@@ -349,8 +528,8 @@ class _TiposPlantaScreenState extends State<TiposPlantaScreen> {
                   );
                 },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -1,12 +1,16 @@
+// lib/features/dashboard/widgets/home_tab.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 
 class HomeTab extends StatefulWidget {
   final Function(int)? onSelectTab;
+  final String userRole;
 
   const HomeTab({
     super.key,
     this.onSelectTab,
+    this.userRole = 'Productor',
   });
 
   @override
@@ -76,6 +80,10 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
+    // Validación del rol de usuario
+    final cleanRole = widget.userRole.toUpperCase().replaceAll('ROLE_', '').trim();
+    final isUsuario = cleanRole == 'USUARIO' || cleanRole == 'USER';
+
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       padding: const EdgeInsets.all(20.0),
@@ -106,20 +114,40 @@ class _HomeTabState extends State<HomeTab> {
               Expanded(
                 child: Column(
                   children: [
-                    _SpotifyCarouselCard(
-                      title: 'Mis Cultivos',
-                      badgeText: '4 Lotes',
-                      icon: Icons.grass,
-                      height: 220,
-                      autoScrollSeconds: 3,
-                      images: const [
-                        'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=600&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1574943320219-553eb213f72d?q=80&w=600&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=600&auto=format&fit=crop',
-                      ],
-                      onTap: () => widget.onSelectTab?.call(2),
-                    ),
-                    const SizedBox(height: 14),
+                    if (isUsuario) ...[
+                      // Para 'USUARIO' mostramos la tarjeta general de 'Cultivos'
+                      _SpotifyCarouselCard(
+                        title: 'Cultivos',
+                        badgeText: 'Catálogo',
+                        icon: Icons.eco_outlined,
+                        height: 200,
+                        autoScrollSeconds: 3,
+                        images: const [
+                          'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=600&auto=format&fit=crop',
+                          'https://images.unsplash.com/photo-1574943320219-553eb213f72d?q=80&w=600&auto=format&fit=crop',
+                          'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=600&auto=format&fit=crop',
+                        ],
+                        onTap: () => widget.onSelectTab?.call(3),
+                      ),
+                      const SizedBox(height: 14),
+                    ] else ...[
+                      // Muestra 'Mis Cultivos' si NO es usuario simple
+                      _SpotifyCarouselCard(
+                        title: 'Mis Cultivos',
+                        badgeText: '4 Lotes',
+                        icon: Icons.grass,
+                        height: 220,
+                        autoScrollSeconds: 3,
+                        images: const [
+                          'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?q=80&w=600&auto=format&fit=crop',
+                          'https://images.unsplash.com/photo-1574943320219-553eb213f72d?q=80&w=600&auto=format&fit=crop',
+                          'https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?q=80&w=600&auto=format&fit=crop',
+                        ],
+                        onTap: () => widget.onSelectTab?.call(2),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
                     _SpotifyCarouselCard(
                       title: 'Guía Plantas',
                       badgeText: 'Diagnóstico',
@@ -133,21 +161,24 @@ class _HomeTabState extends State<HomeTab> {
                       ],
                       onTap: () => widget.onSelectTab?.call(4),
                     ),
-                    const SizedBox(height: 14),
-                    // ⚙️ TARJETA RENOMBRADA: Parámetros del Sistema
-                    _SpotifyCarouselCard(
-                      title: 'Parámetros',
-                      badgeText: 'Configuración',
-                      icon: Icons.tune_rounded,
-                      height: 180,
-                      autoScrollSeconds: 4,
-                      images: const [
-                        'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=600&auto=format&fit=crop',
-                      ],
-                      onTap: () => widget.onSelectTab?.call(6),
-                    ),
+
+                    // Muestra 'Parámetros' únicamente si NO es 'USUARIO'
+                    if (!isUsuario) ...[
+                      const SizedBox(height: 14),
+                      _SpotifyCarouselCard(
+                        title: 'Parámetros',
+                        badgeText: 'Configuración',
+                        icon: Icons.tune_rounded,
+                        height: 180,
+                        autoScrollSeconds: 4,
+                        images: const [
+                          'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=600&auto=format&fit=crop',
+                          'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=600&auto=format&fit=crop',
+                          'https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=600&auto=format&fit=crop',
+                        ],
+                        onTap: () => widget.onSelectTab?.call(6),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -157,25 +188,29 @@ class _HomeTabState extends State<HomeTab> {
               Expanded(
                 child: Column(
                   children: [
-                    _SpotifyCarouselCard(
-                      title: 'Mis Productos',
-                      badgeText: 'Catálogo',
-                      icon: Icons.shopping_bag_outlined,
-                      height: 170,
-                      autoScrollSeconds: 4,
-                      images: const [
-                        'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?q=80&w=600&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600&auto=format&fit=crop',
-                        'https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?q=80&w=600&auto=format&fit=crop',
-                      ],
-                      onTap: () => widget.onSelectTab?.call(1),
-                    ),
-                    const SizedBox(height: 14),
+                    // Muestra 'Mis Productos' únicamente si NO es 'USUARIO'
+                    if (!isUsuario) ...[
+                      _SpotifyCarouselCard(
+                        title: 'Mis Productos',
+                        badgeText: 'Catálogo',
+                        icon: Icons.shopping_bag_outlined,
+                        height: 170,
+                        autoScrollSeconds: 4,
+                        images: const [
+                          'https://images.unsplash.com/photo-1615811361523-6bd03d7748e7?q=80&w=600&auto=format&fit=crop',
+                          'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=600&auto=format&fit=crop',
+                          'https://images.unsplash.com/photo-1588964895597-cfccd6e2dbf9?q=80&w=600&auto=format&fit=crop',
+                        ],
+                        onTap: () => widget.onSelectTab?.call(1),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
+
                     _SpotifyCarouselCard(
                       title: 'Tienda Agro',
                       badgeText: 'Insumos',
+                      height: isUsuario ? 280 : 230,
                       icon: Icons.storefront_outlined,
-                      height: 230,
                       autoScrollSeconds: 3,
                       images: const [
                         'https://images.unsplash.com/photo-1589923188900-85dae523342b?q=80&w=600&auto=format&fit=crop',
@@ -367,7 +402,6 @@ class _SpotifyCarouselCardState extends State<_SpotifyCarouselCard> {
         borderRadius: BorderRadius.circular(18),
         child: Stack(
           children: [
-            // 1. Carrusel de imágenes de fondo
             PageView.builder(
               controller: _cardPageController,
               physics: const NeverScrollableScrollPhysics(),
@@ -382,7 +416,6 @@ class _SpotifyCarouselCardState extends State<_SpotifyCarouselCard> {
               },
             ),
 
-            // 2. Capa con gradiente oscuro para legibilidad
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -397,14 +430,12 @@ class _SpotifyCarouselCardState extends State<_SpotifyCarouselCard> {
               ),
             ),
 
-            // 3. Contenido de la tarjeta (Badge y Título)
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Badge superior derecho
                   Align(
                     alignment: Alignment.topRight,
                     child: Container(
@@ -428,7 +459,6 @@ class _SpotifyCarouselCardState extends State<_SpotifyCarouselCard> {
                     ),
                   ),
 
-                  // Título, ícono y flecha inferior
                   Row(
                     children: [
                       Container(
@@ -476,7 +506,6 @@ class _SpotifyCarouselCardState extends State<_SpotifyCarouselCard> {
               ),
             ),
 
-            // 4. Capa de interacción (InkTaps)
             Positioned.fill(
               child: Material(
                 color: Colors.transparent,
