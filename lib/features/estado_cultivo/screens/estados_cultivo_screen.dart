@@ -1,9 +1,9 @@
 import 'dart:async';
+import 'package:agro_bolivar/features/estado_cultivo/models/create_estado_cultivo_model.dart';
+import 'package:agro_bolivar/features/estado_cultivo/models/estado_cultivo_model.dart';
+import 'package:agro_bolivar/features/estado_cultivo/screens/estado_details_screen.dart';
+import 'package:agro_bolivar/features/estado_cultivo/services/estado_cultivo_service.dart';
 import 'package:flutter/material.dart';
-import '../models/estado_cultivo_model.dart';
-import '../models/estado_cultivo_detail_model.dart';
-import '../models/create_estado_cultivo_dto.dart';
-import '../services/estado_cultivo_service.dart';
 
 class EstadosCultivoScreen extends StatefulWidget {
   final EstadoCultivoService? service;
@@ -23,9 +23,8 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
   late final EstadoCultivoService _service;
   final TextEditingController _searchController = TextEditingController();
 
-  List<EstadoCultivoModel> _estados = [];
+  List<EstadoCultivo> _estados = [];
   bool _isLoading = false;
-  bool _isSaving = false;
   String _searchQuery = '';
 
   @override
@@ -45,7 +44,7 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
   Future<void> _cargarEstados() async {
     setState(() => _isLoading = true);
     try {
-      final result = await _service.getEstadosCultivo();
+      final result = await _service.fetchEstadoCultivosList();
       if (mounted) {
         setState(() {
           _estados = result;
@@ -66,7 +65,7 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
   }
 
   /// Filtro local por nombre o descripción
-  List<EstadoCultivoModel> get _filteredEstados {
+  List<EstadoCultivo> get _filteredEstados {
     if (_searchQuery.isEmpty) return _estados;
     return _estados.where((e) {
       final q = _searchQuery.toLowerCase();
@@ -76,8 +75,8 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
     }).toList();
   }
 
-  /// MODAL DETALLES Y AUDITORÍA
-  void _showDetailsModal(EstadoCultivoModel estado) {
+  /// Abre el modal desplegable para Crear (si estado == null) o Editar
+  void _mostrarModalFormulario([EstadoCultivo? estado]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -85,311 +84,25 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Detalles de Auditoría',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: EstadosCultivoScreen.primaryGreen,
-                          ),
-                        ),
-                        Text(
-                          estado.nombre,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Colors.grey),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const Divider(height: 24),
-
-              FutureBuilder<EstadoCultivoDetailModel?>(
-                future: _service.getEstadoDetails(estado.id),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32.0),
-                      child: Center(
-                        child: CircularProgressIndicator(
-                          color: EstadosCultivoScreen.primaryGreen,
-                        ),
-                      ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline, color: Colors.red.shade600),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Error al obtener los detalles: ${snapshot.error}',
-                              style: TextStyle(color: Colors.red.shade600),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final detail = snapshot.data;
-                  if (detail == null) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20.0),
-                      child: Center(
-                        child: Text(
-                          'No se encontró información de detalle.',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    );
-                  }
-
-                  return Column(
-                    children: [
-                      _DetailTile(
-                        icon: Icons.person_outline_rounded,
-                        label: 'Creado por',
-                        value: detail.creatorName ?? detail.createBy ?? 'N/A',
-                      ),
-                      _DetailTile(
-                        icon: Icons.edit_note_rounded,
-                        label: 'Actualizado por',
-                        value: detail.updateName ?? detail.updateBy ?? 'N/A',
-                      ),
-                      _DetailTile(
-                        icon: Icons.delete_outline_rounded,
-                        label: 'Estado de eliminación',
-                        value: (detail.isDelete ?? false) ? 'Eliminado' : 'Activo',
-                        valueColor: (detail.isDelete ?? false) ? Colors.red : Colors.green.shade700,
-                      ),
-                      if (detail.isDelete ?? false) ...[
-                        _DetailTile(
-                          icon: Icons.person_remove_outlined,
-                          label: 'Eliminado por',
-                          value: detail.deleteName ?? detail.deleteBy ?? 'N/A',
-                        ),
-                        _DetailTile(
-                          icon: Icons.calendar_today_outlined,
-                          label: 'Fecha de eliminación',
-                          value: detail.deleteAt != null
-                              ? detail.deleteAt!.toLocal().toString().split('.')[0]
-                              : 'N/A',
-                        ),
-                      ],
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 12),
-            ],
-          ),
-        );
-      },
+      builder: (ctx) => _EstadoCultivoFormModal(
+        service: _service,
+        estado: estado,
+        onSuccess: _cargarEstados,
+      ),
     );
   }
 
-  /// MODAL PARA CREAR / EDITAR ESTADO
-  void _openFormModal({EstadoCultivoModel? estado}) {
-    final isEditing = estado != null;
-    final nombreController = TextEditingController(text: estado?.nombre ?? '');
-    final descController = TextEditingController(text: estado?.descripcion ?? '');
-    final formKey = GlobalKey<FormState>();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  /// Navega a la pantalla de detalle y auditoría
+  void _verDetalles(EstadoCultivo estado) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EstadoDetailsScreen(
+          estadoId: estado.id,
+          estado: estado,
+          service: _service,
+        ),
       ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                top: 24,
-                left: 20,
-                right: 20,
-                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-              ),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            isEditing ? 'Editar Estado de Cultivo' : 'Nuevo Estado de Cultivo',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close_rounded, color: Colors.grey),
-                            onPressed: () => Navigator.pop(ctx),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: nombreController,
-                        enabled: !_isSaving,
-                        decoration: InputDecoration(
-                          labelText: 'Nombre del estado',
-                          prefixIcon: const Icon(Icons.grass_outlined),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Ingresa un nombre para el estado';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 14),
-                      TextFormField(
-                        controller: descController,
-                        enabled: !_isSaving,
-                        maxLines: 2,
-                        decoration: InputDecoration(
-                          labelText: 'Descripción (opcional)',
-                          prefixIcon: const Icon(Icons.description_outlined),
-                          filled: true,
-                          fillColor: const Color(0xFFF8FAFC),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(14),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: EstadosCultivoScreen.primaryGreen,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          onPressed: _isSaving
-                              ? null
-                              : () async {
-                            if (formKey.currentState!.validate()) {
-                              setModalState(() => _isSaving = true);
-
-                              final dto = CreateEstadoCultivoDto(
-                                nombre: nombreController.text.trim(),
-                                descripcion: descController.text.trim(),
-                              );
-
-                              try {
-                                if (isEditing) {
-                                  await _service.actualizarEstadoCultivo(estado.id, dto);
-                                } else {
-                                  await _service.crearEstadoCultivo(dto);
-                                }
-
-                                setModalState(() => _isSaving = false);
-
-                                if (mounted) {
-                                  Navigator.pop(ctx);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        isEditing
-                                            ? 'Estado actualizado correctamente'
-                                            : 'Estado registrado correctamente',
-                                      ),
-                                      backgroundColor: EstadosCultivoScreen.primaryGreen,
-                                    ),
-                                  );
-                                  _cargarEstados();
-                                }
-                              } catch (e) {
-                                setModalState(() => _isSaving = false);
-                                if (mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        isEditing
-                                            ? 'Error al actualizar: $e'
-                                            : 'Error al registrar: $e',
-                                      ),
-                                      backgroundColor: Colors.red.shade600,
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                          },
-                          child: _isSaving
-                              ? const SizedBox(
-                            width: 22,
-                            height: 22,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          )
-                              : Text(
-                            isEditing ? 'Guardar Cambios' : 'Registrar Estado',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
     );
   }
 
@@ -399,6 +112,18 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4F6),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _mostrarModalFormulario(),
+        backgroundColor: EstadosCultivoScreen.primaryGreen,
+        icon: const Icon(Icons.add_rounded, color: Colors.white),
+        label: const Text(
+          'Nuevo Estado',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       body: RefreshIndicator(
         onRefresh: _cargarEstados,
         color: EstadosCultivoScreen.primaryGreen,
@@ -449,7 +174,7 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
               ),
             ),
 
-            // CARRUSEL HERO
+            // CARRUSEL HERO (Solo visible si no se está buscando)
             if (_searchQuery.isEmpty) const _HeroEstadosCarousel(),
 
             // LISTADO DE ESTADOS
@@ -492,17 +217,14 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
                 ],
               )
                   : ListView.builder(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
                 itemCount: list.length,
                 itemBuilder: (context, index) {
                   final item = list[index];
                   return _EstadoCardItem(
                     estado: item,
-                    onEdit: () => _openFormModal(estado: item),
-                    onDetails: () => _showDetailsModal(item),
+                    onEdit: () => _mostrarModalFormulario(item),
+                    onViewDetails: () => _verDetalles(item),
                   );
                 },
               ),
@@ -510,80 +232,213 @@ class _EstadosCultivoScreenState extends State<EstadosCultivoScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openFormModal(),
-        backgroundColor: EstadosCultivoScreen.primaryGreen,
-        elevation: 3,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'Agregar Estado',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-      ),
     );
   }
 }
 
-// --- ITEM AUXILIAR PARA RENDERIZAR DETALLES ---
-class _DetailTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color? valueColor;
+// --- MODAL REUTILIZABLE PARA CREAR Y EDITAR ESTADOS ---
+class _EstadoCultivoFormModal extends StatefulWidget {
+  final EstadoCultivoService service;
+  final EstadoCultivo? estado;
+  final VoidCallback onSuccess;
 
-  const _DetailTile({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.valueColor,
+  const _EstadoCultivoFormModal({
+    required this.service,
+    this.estado,
+    required this.onSuccess,
   });
+
+  @override
+  State<_EstadoCultivoFormModal> createState() => _EstadoCultivoFormModalState();
+}
+
+class _EstadoCultivoFormModalState extends State<_EstadoCultivoFormModal> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nombreController;
+  late final TextEditingController _descripcionController;
+  bool _isSaving = false;
+
+  bool get _isEditing => widget.estado != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nombreController = TextEditingController(text: widget.estado?.nombre ?? '');
+    _descripcionController = TextEditingController(text: widget.estado?.descripcion ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nombreController.dispose();
+    _descripcionController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+
+    try {
+      final payload = CreateEstadoCultivoModel(
+        nombre: _nombreController.text.trim(),
+        descripcion: _descripcionController.text.trim().isNotEmpty
+            ? _descripcionController.text.trim()
+            : null,
+      );
+
+      if (_isEditing) {
+        await widget.service.updateEstadoCultivo(widget.estado!.id, payload);
+      } else {
+        await widget.service.createEstadoCultivo(payload);
+      }
+
+      if (mounted) {
+        Navigator.pop(context);
+        widget.onSuccess();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _isEditing
+                  ? 'Estado de cultivo actualizado exitosamente'
+                  : 'Estado de cultivo creado exitosamente',
+            ),
+            backgroundColor: EstadosCultivoScreen.primaryGreen,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al ${_isEditing ? "actualizar" : "crear"} estado: $e'),
+            backgroundColor: Colors.red.shade600,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 20, color: const Color(0xFF64748B)),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF64748B),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 20,
+        right: 20,
+        top: 20,
+      ),
+      child: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _isEditing ? 'Editar Estado de Cultivo' : 'Nuevo Estado de Cultivo',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // CAMPO NOMBRE
+              TextFormField(
+                controller: _nombreController,
+                textCapitalization: TextCapitalization.characters,
+                decoration: InputDecoration(
+                  labelText: 'Nombre *',
+                  hintText: 'Ej. MENSUAL, GERMINACIÓN...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: EstadosCultivoScreen.primaryGreen,
+                      width: 1.5,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  value,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: valueColor ?? const Color(0xFF1E293B),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) {
+                    return 'El nombre es obligatorio';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+
+              // CAMPO DESCRIPCIÓN
+              TextFormField(
+                controller: _descripcionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Descripción (Opcional)',
+                  hintText: 'Ej. Ciclo de producción aproximado de un mes',
+                  alignLabelWithHint: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: EstadosCultivoScreen.primaryGreen,
+                      width: 1.5,
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 24),
+
+              // BOTÓN GUARDAR / ACTUALIZAR
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: _isSaving ? null : _guardar,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: EstadosCultivoScreen.primaryGreen,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : Text(
+                    _isEditing ? 'Actualizar Estado' : 'Guardar Estado',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -763,21 +618,22 @@ class _HeroEstadosCarouselState extends State<_HeroEstadosCarousel> {
   }
 }
 
-// --- TARJETA DE ESTADO CON FRANJA Y ACCIONES ---
+// --- TARJETA DE ESTADO CON OPCIONES DE VER DETALLES Y EDICIÓN ---
 class _EstadoCardItem extends StatelessWidget {
-  final EstadoCultivoModel estado;
+  final EstadoCultivo estado;
   final VoidCallback onEdit;
-  final VoidCallback onDetails;
+  final VoidCallback onViewDetails;
 
   const _EstadoCardItem({
     required this.estado,
     required this.onEdit,
-    required this.onDetails,
+    required this.onViewDetails,
   });
 
   @override
   Widget build(BuildContext context) {
-    final tieneDescripcion = estado.descripcion != null && estado.descripcion!.trim().isNotEmpty;
+    final tieneDescripcion =
+        estado.descripcion != null && estado.descripcion!.trim().isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -795,83 +651,79 @@ class _EstadoCardItem extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: IntrinsicHeight(
-          child: Row(
-            children: [
-              // FRANJA VERDE LATERAL
-              Container(
-                width: 5,
-                color: EstadosCultivoScreen.primaryGreen,
-              ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onViewDetails,
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  // FRANJA VERDE LATERAL
+                  Container(
+                    width: 5,
+                    color: EstadosCultivoScreen.primaryGreen,
+                  ),
 
-              // CONTENIDO DE LA TARJETA
-              Expanded(
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onDetails,
+                  // CONTENIDO DE LA TARJETA
+                  Expanded(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 14,
                       ),
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  estado.nombre,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Color(0xFF111827),
-                                    letterSpacing: -0.2,
-                                  ),
-                                ),
-                                if (tieneDescripcion) ...[
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    estado.descripcion!,
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF4B5563),
-                                      height: 1.35,
-                                    ),
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
+                          Text(
+                            estado.nombre,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF111827),
+                              letterSpacing: -0.2,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.info_outline_rounded,
-                              color: Color(0xFF64748B),
-                              size: 20,
+                          if (tieneDescripcion) ...[
+                            const SizedBox(height: 5),
+                            Text(
+                              estado.descripcion!,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF4B5563),
+                                height: 1.35,
+                              ),
                             ),
-                            onPressed: onDetails,
-                            tooltip: 'Ver auditoría',
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.edit_outlined,
-                              color: EstadosCultivoScreen.primaryGreen,
-                              size: 20,
-                            ),
-                            onPressed: onEdit,
-                            tooltip: 'Editar',
-                          ),
+                          ],
                         ],
                       ),
                     ),
                   ),
-                ),
+
+                  // BOTÓN AUDITORÍA / DETALLES
+                  IconButton(
+                    icon: const Icon(
+                      Icons.info_outline_rounded,
+                      color: Color(0xFF64748B),
+                      size: 20,
+                    ),
+                    onPressed: onViewDetails,
+                    tooltip: 'Ver Detalles y Auditoría',
+                  ),
+
+                  // BOTÓN EDITAR
+                  IconButton(
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      color: EstadosCultivoScreen.primaryGreen,
+                      size: 20,
+                    ),
+                    onPressed: onEdit,
+                    tooltip: 'Editar Estado',
+                  ),
+                  const SizedBox(width: 4),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

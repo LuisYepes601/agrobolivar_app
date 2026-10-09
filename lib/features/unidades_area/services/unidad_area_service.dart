@@ -9,7 +9,6 @@ class UnidadAreaService {
     return 'https://agro-bolivar-api-1.onrender.com';
   }
 
-  // Ajusta este endpoint si en tu backend se llama diferente (ej: /api/v1/unidad-area/admin)
   static String get _endpoint => '$_baseUrl/api/v1/unidades-area/admin';
 
   Future<String?> _obtenerToken() async {
@@ -59,9 +58,69 @@ class UnidadAreaService {
     }
   }
 
-  /// Método auxiliar rápido para obtener la lista simple (útil para Dropdowns)
+  /// Método auxiliar rápido para obtener la lista simple
   Future<List<UnidadArea>> fetchUnidadesAreaList() async {
     final paginated = await fetchUnidadesAreaAdmin(page: 0, size: 100, active: false);
     return paginated.content;
+  }
+
+  /// Crear una nueva unidad de área (POST /api/v1/unidades-area/admin)
+  Future<Map<String, dynamic>> crearUnidadArea(Map<String, dynamic> data) async {
+    try {
+      final uri = Uri.parse(_endpoint);
+      final token = await _obtenerToken();
+
+      final response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      );
+
+      debugPrint('📡 [UnidadAreaService] POST $uri - Status: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        return jsonDecode(decodedBody) as Map<String, dynamic>;
+      } else {
+        debugPrint('❌ [UnidadAreaService] Error: ${response.body}');
+        throw Exception('Error al crear la unidad de área (${response.statusCode})');
+      }
+    } catch (e) {
+      debugPrint('❌ [UnidadAreaService] Error en crearUnidadArea: $e');
+      rethrow;
+    }
+  }
+
+  /// Editar/Actualizar una unidad de área existente por ID (PUT /api/v1/unidades-area/admin/{id})
+  Future<Map<String, dynamic>> actualizarUnidadArea(int id, Map<String, dynamic> data) async {
+    try {
+      final uri = Uri.parse('$_endpoint/$id');
+      final token = await _obtenerToken();
+
+      final response = await http.put(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(data),
+      );
+
+      debugPrint('📡 [UnidadAreaService] PUT $uri - Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        return jsonDecode(decodedBody) as Map<String, dynamic>;
+      } else {
+        debugPrint('❌ [UnidadAreaService] Error: ${response.body}');
+        throw Exception('Error al actualizar la unidad de área (${response.statusCode})');
+      }
+    } catch (e) {
+      debugPrint('❌ [UnidadAreaService] Error en actualizarUnidadArea: $e');
+      rethrow;
+    }
   }
 }

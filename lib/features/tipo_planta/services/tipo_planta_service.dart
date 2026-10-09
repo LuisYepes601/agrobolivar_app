@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/tipo_planta_model.dart';
 
 class TipoPlantaService {
-  // Reemplaza la ruta final según tu endpoint exacto del backend (ej: /tipo-plantas o /tipo-plantas/admin)
+  // Ruta final para el endpoint del backend
   final String baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1/admin/tipo-plantas';
 
   Map<String, String> get _headers => {
@@ -48,6 +48,72 @@ class TipoPlantaService {
       }
     } catch (e, stackTrace) {
       print('❌ EXCEPCIÓN EN TipoPlantaService: $e');
+      print('📍 STACKTRACE:\n$stackTrace');
+      print('==================================================');
+      rethrow;
+    }
+  }
+
+  /// Crear un nuevo tipo de planta (POST /api/v1/admin/tipo-plantas)
+  Future<Map<String, dynamic>> crearTipoPlanta(Map<String, dynamic> data) async {
+    final uri = Uri.parse(baseUrl);
+
+    print('================ [TipoPlantaService - POST] ================');
+    print('🌐 REQUEST URL: $uri');
+    print('📦 BODY: ${jsonEncode(data)}');
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+
+      print('📊 STATUS CODE: ${response.statusCode}');
+      print('📦 RESPONSE BODY: ${response.body}');
+      print('==================================================');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        return jsonDecode(decodedBody) as Map<String, dynamic>;
+      } else {
+        throw Exception('Error al crear el tipo de planta (${response.statusCode})');
+      }
+    } catch (e, stackTrace) {
+      print('❌ EXCEPCIÓN EN crearTipoPlanta: $e');
+      print('📍 STACKTRACE:\n$stackTrace');
+      print('==================================================');
+      rethrow;
+    }
+  }
+
+  /// Actualizar un tipo de planta existente (PUT /api/v1/admin/tipo-plantas/{id})
+  Future<Map<String, dynamic>> actualizarTipoPlanta(dynamic id, Map<String, dynamic> data) async {
+    final uri = Uri.parse('$baseUrl/$id');
+
+    print('================ [TipoPlantaService - PUT] ================');
+    print('🌐 REQUEST URL: $uri');
+    print('📦 BODY: ${jsonEncode(data)}');
+
+    try {
+      final response = await http.put(
+        uri,
+        headers: _headers,
+        body: jsonEncode(data),
+      );
+
+      print('📊 STATUS CODE: ${response.statusCode}');
+      print('📦 RESPONSE BODY: ${response.body}');
+      print('==================================================');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final decodedBody = utf8.decode(response.bodyBytes);
+        return jsonDecode(decodedBody) as Map<String, dynamic>;
+      } else {
+        throw Exception('Error al actualizar el tipo de planta (${response.statusCode})');
+      }
+    } catch (e, stackTrace) {
+      print('❌ EXCEPCIÓN EN actualizarTipoPlanta: $e');
       print('📍 STACKTRACE:\n$stackTrace');
       print('==================================================');
       rethrow;

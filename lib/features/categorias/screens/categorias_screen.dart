@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:agro_bolivar/features/categorias/models/categoria_model.dart';
 import 'package:agro_bolivar/features/categorias/services/categoria_service.dart';
@@ -7,7 +8,6 @@ class CategoriasScreen extends StatefulWidget {
   final CategoriaService? categoriaService;
   final Function(String nombre, String? descripcion)? onAgregar;
   final Function(Categoria categoria, String nombre, String? descripcion)? onEditar;
-  final Function(Categoria categoria)? onEliminar;
 
   const CategoriasScreen({
     super.key,
@@ -15,7 +15,6 @@ class CategoriasScreen extends StatefulWidget {
     this.categoriaService,
     this.onAgregar,
     this.onEditar,
-    this.onEliminar,
   });
 
   static const primaryGreen = Color(0xFF1E4D2B);
@@ -30,6 +29,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
 
   List<Categoria> _categorias = [];
   bool _isLoading = false;
+  bool _isSaving = false;
   String _searchQuery = '';
 
   @override
@@ -86,149 +86,171 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.only(
-            top: 24,
-            left: 20,
-            right: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          ),
-          child: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                top: 24,
+                left: 20,
+                right: 20,
+                bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              ),
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      isEditing ? 'Editar Categoría' : 'Nueva Categoría',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          isEditing ? 'Editar Categoría' : 'Nueva Categoría',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, color: Colors.grey),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: nombreController,
+                      enabled: !_isSaving,
+                      decoration: InputDecoration(
+                        labelText: 'Nombre de la Categoría',
+                        prefixIcon: const Icon(Icons.label_outline_rounded),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Ingresa un nombre válido';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                    TextFormField(
+                      controller: descController,
+                      enabled: !_isSaving,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: 'Descripción (opcional)',
+                        prefixIcon: const Icon(Icons.description_outlined),
+                        filled: true,
+                        fillColor: const Color(0xFFF8FAFC),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, color: Colors.grey),
-                      onPressed: () => Navigator.pop(ctx),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: CategoriasScreen.primaryGreen,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: _isSaving
+                            ? null
+                            : () async {
+                          if (formKey.currentState!.validate()) {
+                            setModalState(() => _isSaving = true);
+
+                            final nombre = nombreController.text.trim();
+                            final desc = descController.text.trim().isEmpty
+                                ? null
+                                : descController.text.trim();
+
+                            bool exito = false;
+
+                            if (isEditing) {
+                              if (widget.onEditar != null) {
+                                widget.onEditar!(categoria, nombre, desc);
+                                exito = true;
+                              } else {
+                                exito = await _categoriaService.editarCategoria(
+                                  id: categoria.id,
+                                  nombre: nombre,
+                                  descripcion: desc,
+                                );
+                              }
+                            } else {
+                              if (widget.onAgregar != null) {
+                                widget.onAgregar!(nombre, desc);
+                                exito = true;
+                              } else {
+                                exito = await _categoriaService.crearCategoria(
+                                  nombre: nombre,
+                                  descripcion: desc,
+                                );
+                              }
+                            }
+
+                            setModalState(() => _isSaving = false);
+
+                            if (mounted) {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    exito
+                                        ? (isEditing
+                                        ? 'Categoría actualizada con éxito'
+                                        : 'Categoría creada con éxito')
+                                        : 'Ocurrió un error al guardar',
+                                  ),
+                                  backgroundColor: exito
+                                      ? CategoriasScreen.primaryGreen
+                                      : Colors.red.shade600,
+                                ),
+                              );
+                              _cargarCategorias();
+                            }
+                          }
+                        },
+                        child: _isSaving
+                            ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                            : Text(
+                          isEditing ? 'Guardar Cambios' : 'Crear Categoría',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: nombreController,
-                  decoration: InputDecoration(
-                    labelText: 'Nombre de la Categoría',
-                    prefixIcon: const Icon(Icons.label_outline_rounded),
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Ingresa un nombre válido';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 14),
-                TextFormField(
-                  controller: descController,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: 'Descripción (opcional)',
-                    prefixIcon: const Icon(Icons.description_outlined),
-                    filled: true,
-                    fillColor: const Color(0xFFF8FAFC),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: CategoriasScreen.primaryGreen,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: () async {
-                      if (formKey.currentState!.validate()) {
-                        final nombre = nombreController.text.trim();
-                        final desc = descController.text.trim().isEmpty
-                            ? null
-                            : descController.text.trim();
-
-                        if (isEditing) {
-                          widget.onEditar?.call(categoria, nombre, desc);
-                        } else {
-                          widget.onAgregar?.call(nombre, desc);
-                        }
-                        Navigator.pop(ctx);
-                        _cargarCategorias();
-                      }
-                    },
-                    child: Text(
-                      isEditing ? 'Guardar Cambios' : 'Crear Categoría',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
-    );
-  }
-
-  // --- DIÁLOGO DE CONFIRMACIÓN DE ELIMINACIÓN ---
-  void _confirmDelete(Categoria categoria) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('¿Eliminar Categoría?'),
-        content: Text(
-          '¿Estás seguro de eliminar "${categoria.nombre}"? Esta acción no se puede deshacer.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-            onPressed: () {
-              widget.onEliminar?.call(categoria);
-              Navigator.pop(ctx);
-              _cargarCategorias();
-            },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -243,7 +265,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
         color: CategoriasScreen.primaryGreen,
         child: Column(
           children: [
-            // BUSCADOR TIPO WHATSAPP / IOS (Limpio y redondeado)
+            // BUSCADOR TIPO WHATSAPP / IOS
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: TextField(
@@ -265,7 +287,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                   )
                       : null,
                   filled: true,
-                  fillColor: const Color(0xFFF1F5F9), // Gris neutro muy suave
+                  fillColor: const Color(0xFFF1F5F9),
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -282,6 +304,9 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                 ),
               ),
             ),
+
+            // CARRUSEL HERO DE CATEGORÍAS DESTACADAS (Se oculta al buscar)
+            if (_searchQuery.isEmpty) const _HeroCategoryCarousel(),
 
             // LISTADO DE TARJETAS
             Expanded(
@@ -333,7 +358,6 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                   return _CategoriaCardItem(
                     categoria: item,
                     onEdit: () => _openCategoriaModal(categoria: item),
-                    onDelete: () => _confirmDelete(item),
                   );
                 },
               ),
@@ -362,19 +386,201 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
   }
 }
 
-// --- TARJETA CON ESTILO MERCADO LIBRE / WHATSAPP (SUAVE & MINIMALISTA) ---
+// --- WIDGET DEL CARRUSEL HERO ---
+class _HeroCategoryCarousel extends StatefulWidget {
+  const _HeroCategoryCarousel();
+
+  @override
+  State<_HeroCategoryCarousel> createState() => _HeroCategoryCarouselState();
+}
+
+class _HeroCategoryCarouselState extends State<_HeroCategoryCarousel> {
+  late final PageController _pageController;
+  int _currentPage = 0;
+  Timer? _timer;
+
+  final List<Map<String, String>> _heroItems = [
+    {
+      'title': 'Granos y Cereales',
+      'subtitle': 'Maíz, arroz, avena y cereales seleccionados',
+      'image': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=800&auto=format&fit=crop',
+      'tag': 'Popular',
+    },
+    {
+      'title': 'Frutas y Hortalizas',
+      'subtitle': 'Cosechas frescas traídas del campo',
+      'image': 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=800&auto=format&fit=crop',
+      'tag': 'Frescos',
+    },
+    {
+      'title': 'Dulces y Transformados',
+      'subtitle': 'Mieles, mermeladas y golosinas artesanales',
+      'image': 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80',
+      'tag': 'Artesanal',
+    },
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.92);
+    _startTimer();
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (_pageController.hasClients) {
+        final nextPage = (_currentPage + 1) % _heroItems.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        SizedBox(
+          height: 150,
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() => _currentPage = index);
+            },
+            itemCount: _heroItems.length,
+            itemBuilder: (context, index) {
+              final item = _heroItems[index];
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Stack(
+                    children: [
+                      // Imagen de fondo
+                      Positioned.fill(
+                        child: Image.network(
+                          item['image']!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            color: CategoriasScreen.primaryGreen,
+                          ),
+                        ),
+                      ),
+                      // Sombra en degradado
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.15),
+                                Colors.black.withOpacity(0.75),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Textos e insignias del Hero
+                      Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.25),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                item['tag']!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              item['title']!,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item['subtitle']!,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Indicador de Puntos (Dots)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(
+            _heroItems.length,
+                (index) => AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              height: 6,
+              width: _currentPage == index ? 20 : 6,
+              decoration: BoxDecoration(
+                color: _currentPage == index
+                    ? CategoriasScreen.primaryGreen
+                    : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ],
+    );
+  }
+}
+
 class _CategoriaCardItem extends StatelessWidget {
   final Categoria categoria;
   final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const _CategoriaCardItem({
     required this.categoria,
     required this.onEdit,
-    required this.onDelete,
   });
 
-  // Extrae solo la PRIMERA inicial del nombre (ej. "Granos y Cereales" -> "G")
   String _getInicial(String nombre) {
     final trimmed = nombre.trim();
     if (trimmed.isNotEmpty) {
@@ -396,13 +602,13 @@ class _CategoriaCardItem extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16), // Redondeado de 16px
-        border: Border.all(color: const Color(0xFFF1F5F9)), // Borde ultra tenue
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.025),
             blurRadius: 10,
-            offset: const Offset(0, 4), // Sombra flotante suave
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -416,12 +622,11 @@ class _CategoriaCardItem extends StatelessWidget {
             padding: const EdgeInsets.all(14.0),
             child: Row(
               children: [
-                // BADGE CIRCULAR CON ÚNICA INICIAL
                 Container(
                   width: 46,
                   height: 46,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFE8F5E9), // Verde pastel suave
+                    color: Color(0xFFE8F5E9),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -436,8 +641,6 @@ class _CategoriaCardItem extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 14),
-
-                // TEXTO CONTENIDO (Nombre + Descripción)
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,44 +667,14 @@ class _CategoriaCardItem extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // MENÚ DE OPCIONES DE TRES PUNTOS (...)
-                PopupMenuButton<String>(
-                  icon: Icon(
-                    Icons.more_vert_rounded,
-                    color: Colors.grey.shade500,
+                IconButton(
+                  icon: const Icon(
+                    Icons.edit_outlined,
+                    color: Colors.blue,
                     size: 20,
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  elevation: 3,
-                  onSelected: (value) {
-                    if (value == 'edit') onEdit();
-                    if (value == 'delete') onDelete();
-                  },
-                  itemBuilder: (context) => [
-                    const PopupMenuItem(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_outlined, size: 18, color: Colors.blue),
-                          SizedBox(width: 10),
-                          Text('Editar', style: TextStyle(fontSize: 13)),
-                        ],
-                      ),
-                    ),
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(Icons.delete_outline_rounded, size: 18, color: Colors.red),
-                          SizedBox(width: 10),
-                          Text('Eliminar', style: TextStyle(fontSize: 13, color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                  ],
+                  onPressed: onEdit,
+                  tooltip: 'Editar',
                 ),
               ],
             ),

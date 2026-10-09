@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
-// Importamos la pantalla real de Categorías
+// Importación de pantallas reales
 import 'package:agro_bolivar/features/categorias/screens/categorias_screen.dart';
+import 'package:agro_bolivar/features/ciclo_germinacion/screens/ciclos_germinacion_screen.dart';
+import 'package:agro_bolivar/features/estado_cultivo/screens/estados_cultivo_screen.dart';
+import 'package:agro_bolivar/features/unidades_area/screens/unidad_area_screen.dart';
+import 'package:agro_bolivar/features/unidades_peso/screens/unidades_peso_screen.dart';
+import 'package:agro_bolivar/features/tipo_planta/screens/tipo_planta_screen.dart';
+import 'package:agro_bolivar/features/tipo_documento/screens/tipo_documento_screen.dart';
 
 class AdminParametrosScreen extends StatefulWidget {
   const AdminParametrosScreen({super.key});
@@ -14,37 +20,41 @@ class AdminParametrosScreen extends StatefulWidget {
 class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
   int _selectedIndex = 0;
 
-  // Lista de secciones
   final List<Map<String, dynamic>> _secciones = const [
     {
       'nombre': 'Categoría',
       'plural': 'Categorías',
       'icon': Icons.category_outlined,
-      'descripcion': 'Gestión de categorías generales',
     },
     {
       'nombre': 'Ciclo de Germinación',
       'plural': 'Ciclos de Germinación',
       'icon': Icons.nature_outlined,
-      'descripcion': 'Fases y etapas de germinación',
     },
     {
       'nombre': 'Estado de Cultivo',
       'plural': 'Estados de Cultivo',
       'icon': Icons.flag_outlined,
-      'descripcion': 'Estatus operativo de siembras',
     },
     {
-      'nombre': 'Tipo de Suelo',
-      'plural': 'Tipos de Suelo',
-      'icon': Icons.landscape_outlined,
-      'descripcion': 'Clasificación de suelos y terrenos',
+      'nombre': 'Unidad de Área',
+      'plural': 'Unidades de Área',
+      'icon': Icons.square_foot_outlined,
     },
     {
-      'nombre': 'Unidad de Medida',
-      'plural': 'Unidades de Medida',
-      'icon': Icons.straighten_outlined,
-      'descripcion': 'Kilos, hectáreas, litros, etc.',
+      'nombre': 'Unidad de Peso',
+      'plural': 'Unidades de Peso',
+      'icon': Icons.scale_outlined,
+    },
+    {
+      'nombre': 'Tipo de Planta',
+      'plural': 'Tipos de Planta',
+      'icon': Icons.eco_outlined,
+    },
+    {
+      'nombre': 'Tipo de Documento',
+      'plural': 'Tipos de Documento',
+      'icon': Icons.badge_outlined,
     },
   ];
 
@@ -54,83 +64,82 @@ class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      // --- MENÚ HAMBURGUESA FLOTANTE (DRAWER) ---
+      // --- MENÚ HAMBURGUESA FLOTANTE (DRAWER MINIMALISTA) ---
       drawer: Drawer(
+        width: 270,
         child: Column(
           children: [
+            // Header compacto
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 50, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 16),
               color: AdminParametrosScreen.primaryGreen,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: const [
-                  Icon(Icons.tune_rounded, color: Colors.white, size: 32),
-                  SizedBox(height: 12),
+                  Icon(Icons.tune_rounded, color: Colors.white, size: 22),
+                  SizedBox(width: 10),
                   Text(
-                    'Parámetros del Sistema',
+                    'Parámetros',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Selecciona el parámetro a gestionar',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
             ),
+
+            // Lista de opciones estilo Mercado Libre
             Expanded(
               child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                 itemCount: _secciones.length,
                 itemBuilder: (context, index) {
                   final item = _secciones[index];
                   final isSelected = index == _selectedIndex;
 
                   return Container(
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 2,
-                    ),
+                    margin: const EdgeInsets.symmetric(vertical: 2),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AdminParametrosScreen.primaryGreen.withOpacity(0.1)
+                          ? AdminParametrosScreen.primaryGreen.withOpacity(0.08)
                           : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: ListTile(
+                      dense: true,
+                      visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                       leading: Icon(
                         item['icon'] as IconData,
+                        size: 20,
                         color: isSelected
                             ? AdminParametrosScreen.primaryGreen
-                            : Colors.grey.shade700,
+                            : const Color(0xFF555555),
                       ),
                       title: Text(
                         item['plural'] as String,
                         style: TextStyle(
-                          fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 13.5,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                           color: isSelected
                               ? AdminParametrosScreen.primaryGreen
-                              : const Color(0xFF1E293B),
+                              : const Color(0xFF222222),
                         ),
                       ),
-                      subtitle: Text(
-                        item['descripcion'] as String,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
+                      trailing: isSelected
+                          ? const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: AdminParametrosScreen.primaryGreen,
+                      )
+                          : null,
                       onTap: () {
                         setState(() {
                           _selectedIndex = index;
                         });
-                        Navigator.pop(context); // Cierra el menú flotante
+                        Navigator.pop(context);
                       },
                     ),
                   );
@@ -144,7 +153,7 @@ class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
         builder: (innerContext) {
           return Column(
             children: [
-              // --- BARRA CABECERA INTERNA CON BOTÓN HAMBURGUESA ---
+              // --- BARRA CABECERA INTERNA ---
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -162,7 +171,6 @@ class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
                 ),
                 child: Row(
                   children: [
-                    // Botón para desplegar el menú flotante
                     InkWell(
                       onTap: () {
                         Scaffold.of(innerContext).openDrawer();
@@ -171,8 +179,7 @@ class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AdminParametrosScreen.primaryGreen
-                              .withOpacity(0.1),
+                          color: AdminParametrosScreen.primaryGreen.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(
@@ -217,14 +224,9 @@ class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
                 ),
               ),
 
-              // --- CONVIVENCIA: CATEGORÍAS REAL + PLANTILLAS ---
+              // --- RUTEO SEGÚN LA OPCIÓN SELECCIONADA ---
               Expanded(
-                child: _selectedIndex == 0
-                    ? const CategoriasScreen()
-                    : _EntidadCrudList(
-                  key: ValueKey(_selectedIndex),
-                  entidadNombre: seccionActual['nombre'] as String,
-                ),
+                child: _buildPantallaActual(seccionActual['nombre'] as String),
               ),
             ],
           );
@@ -232,78 +234,63 @@ class _AdminParametrosScreenState extends State<AdminParametrosScreen> {
       ),
     );
   }
+
+  Widget _buildPantallaActual(String nombreEntidad) {
+    switch (_selectedIndex) {
+      case 0:
+        return const CategoriasScreen();
+      case 1:
+        return const CiclosGerminacionScreen();
+      case 2:
+        return const EstadosCultivoScreen();
+      case 3:
+        return const UnidadesAreaScreen();
+      case 4:
+        return const UnidadesPesoScreen();
+      case 5:
+        return const TiposPlantaScreen();
+      case 6:
+        return const TipoDocumentoScreen();
+      default:
+        return _ModuloEnConstruccion(entidadNombre: nombreEntidad);
+    }
+  }
 }
 
-// Plantilla temporal para los parámetros que aún no tienen pantalla propia
-class _EntidadCrudList extends StatelessWidget {
+class _ModuloEnConstruccion extends StatelessWidget {
   final String entidadNombre;
 
-  const _EntidadCrudList({
-    super.key,
-    required this.entidadNombre,
-  });
+  const _ModuloEnConstruccion({required this.entidadNombre});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: 4,
-        itemBuilder: (context, index) {
-          return Card(
-            elevation: 0,
-            margin: const EdgeInsets.only(bottom: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.grey.shade300),
-            ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 4,
-              ),
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFFE8F5E9),
-                child: Icon(
-                  Icons.tune_rounded,
-                  color: Color(0xFF1E4D2B),
-                  size: 20,
-                ),
-              ),
-              title: Text(
-                '$entidadNombre ${index + 1}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text('Parámetro configurable para $entidadNombre'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, color: Colors.blue),
-                    onPressed: () {},
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF1E4D2B),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: Text(
-          'Agregar $entidadNombre',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.construction_rounded,
+            size: 52,
+            color: Colors.grey.shade400,
           ),
-        ),
+          const SizedBox(height: 12),
+          Text(
+            'Gestión de $entidadNombre',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Próximamente disponible',
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
       ),
     );
   }
