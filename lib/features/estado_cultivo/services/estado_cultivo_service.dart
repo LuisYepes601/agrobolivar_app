@@ -8,7 +8,7 @@ import '../models/estado_cultivo_details_model.dart';
 
 class EstadoCultivoService {
   static String get _baseUrl {
-    return 'https://agro-bolivar-api-1.onrender.com';
+    return 'https://agro-bolivar-api-vwo2.onrender.com';
   }
 
   static String get _endpoint => '$_baseUrl/api/v1/estado-cultivos/admin';

@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../models/genero_planta_model.dart';
 
 class GeneroPlantaService {
-  final String baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1/genero-plantas/admin';
+  final String baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1/genero-plantas/admin';
 
   /// Obtiene el listado de géneros de planta
   Future<List<GeneroPlantaModel>> fetchGeneros() async {

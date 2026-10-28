@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/estacion_cultivo_model.dart';
 
 class EstacionCultivoService {
-  final String baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1';
+  final String baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1';
 
   Future<List<EstacionCultivoModel>> getEstacionesCultivoAdmin({int page = 0, int size = 100}) async {
     try {

@@ -6,7 +6,7 @@ import '../models/create_ciclo_germinacion_dto.dart';
 import '../models/ciclo_germinacion_detail_model.dart';
 
 class CicloGerminacionService {
-  static const String _defaultBaseUrl = 'https://agro-bolivar-api-1.onrender.com';
+  static const String _defaultBaseUrl = 'https://agro-bolivar-api-vwo2.onrender.com';
   final String baseUrl;
   final http.Client httpClient;
 

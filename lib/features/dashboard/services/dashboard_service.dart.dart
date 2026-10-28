@@ -8,7 +8,7 @@ class DashboardService {
   // Solo la IP y puerto base
   static String get baseUrl {
 
-    return 'https://agro-bolivar-api-1.onrender.com';
+    return 'https://agro-bolivar-api-vwo2.onrender.com';
   }
 
   Future<UserBasicInfo> fetchBasicUserInfo(int userId) async {

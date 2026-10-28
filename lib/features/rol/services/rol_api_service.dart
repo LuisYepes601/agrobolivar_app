@@ -8,7 +8,7 @@ import '../models/rol_model.dart';
 class RolApiService {
   final String baseUrl;
 
-  RolApiService({this.baseUrl = 'https://agro-bolivar-api-1.onrender.com'});
+  RolApiService({this.baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com'});
 
   Future<List<RolModel>> fetchRoles() async {
     final uri = Uri.parse('$baseUrl/api/v1/roles/admin');

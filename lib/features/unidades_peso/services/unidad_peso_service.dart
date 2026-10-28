@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/unidad_peso_model.dart';
 
 class UnidadPesoService {
-  static String get _baseUrl => 'https://agro-bolivar-api-1.onrender.com';
+  static String get _baseUrl => 'https://agro-bolivar-api-vwo2.onrender.com';
   static String get _endpoint => '$_baseUrl/api/v1/unidades-peso/admin';
 
   Future<String?> _obtenerToken() async {
@@ -13,7 +13,6 @@ class UnidadPesoService {
     return prefs.getString('token') ?? prefs.getString('jwt') ?? prefs.getString('token_access');
   }
 
-  /// Obtiene la lista administrativa paginada
   Future<PaginatedUnidadesPeso> fetchUnidadesPesoAdmin({
     String? nombre,
     bool active = false,
@@ -46,22 +45,22 @@ class UnidadPesoService {
         final Map<String, dynamic> body = jsonDecode(decodedBody);
         return PaginatedUnidadesPeso.fromJson(body);
       } else {
-        debugPrint('❌ [UnidadPesoService] Respuesta de error: ${response.body}');
+
         throw Exception('Error al obtener unidades de peso (${response.statusCode})');
       }
     } catch (e) {
-      debugPrint('❌ [UnidadPesoService] Error en fetchUnidadesPesoAdmin: $e');
+      debugPrint('[UnidadPesoService] Error en fetchUnidadesPesoAdmin: $e');
       rethrow;
     }
   }
 
-  /// Método auxiliar rápido para obtener la lista simple
+
   Future<List<UnidadPeso>> fetchUnidadesPesoList() async {
     final paginated = await fetchUnidadesPesoAdmin(page: 0, size: 100);
     return paginated.content;
   }
 
-  /// Crear una nueva unidad de peso (POST /api/v1/unidades-peso/admin)
+
   Future<Map<String, dynamic>> crearUnidadPeso(Map<String, dynamic> data) async {
     try {
       final uri = Uri.parse(_endpoint);
@@ -76,22 +75,21 @@ class UnidadPesoService {
         body: jsonEncode(data),
       );
 
-      debugPrint('📡 [UnidadPesoService] POST $uri - Status: ${response.statusCode}');
+      debugPrint('[UnidadPesoService] POST $uri - Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decodedBody = utf8.decode(response.bodyBytes);
         return jsonDecode(decodedBody) as Map<String, dynamic>;
       } else {
-        debugPrint('❌ [UnidadPesoService] Respuesta de error: ${response.body}');
+        debugPrint('[UnidadPesoService] Respuesta de error: ${response.body}');
         throw Exception('Error al crear la unidad de peso (${response.statusCode})');
       }
     } catch (e) {
-      debugPrint('❌ [UnidadPesoService] Error en crearUnidadPeso: $e');
+      debugPrint('[UnidadPesoService] Error en crearUnidadPeso: $e');
       rethrow;
     }
   }
 
-  /// Actualizar unidad de peso existente (PUT /api/v1/unidades-peso/admin/{id})
   Future<Map<String, dynamic>> actualizarUnidadPeso(dynamic id, Map<String, dynamic> data) async {
     try {
       final uri = Uri.parse('$_endpoint/$id');
@@ -106,17 +104,17 @@ class UnidadPesoService {
         body: jsonEncode(data),
       );
 
-      debugPrint('📡 [UnidadPesoService] PUT $uri - Status: ${response.statusCode}');
+      debugPrint('[UnidadPesoService] PUT $uri - Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final decodedBody = utf8.decode(response.bodyBytes);
         return jsonDecode(decodedBody) as Map<String, dynamic>;
       } else {
-        debugPrint('❌ [UnidadPesoService] Respuesta de error: ${response.body}');
+        debugPrint('[UnidadPesoService] Respuesta de error: ${response.body}');
         throw Exception('Error al actualizar la unidad de peso (${response.statusCode})');
       }
     } catch (e) {
-      debugPrint('❌ [UnidadPesoService] Error en actualizarUnidadPeso: $e');
+      debugPrint('[UnidadPesoService] Error en actualizarUnidadPeso: $e');
       rethrow;
     }
   }

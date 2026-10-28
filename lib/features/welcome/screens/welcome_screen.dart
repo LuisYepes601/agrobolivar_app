@@ -14,15 +14,12 @@ class WelcomeScreen extends StatelessWidget {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Imagen de fondo agrícola
           Positioned.fill(
             child: Image.network(
               'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80',
               fit: BoxFit.cover,
             ),
           ),
-
-          // Capa de degradado para garantizar legibilidad del texto
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -84,7 +81,7 @@ class WelcomeScreen extends StatelessWidget {
 
                   const SizedBox(height: 14),
 
-                  // Descripción
+
                   Text(
                     'Gestión, tecnología y productividad agrícola reunidas en un solo lugar.',
                     textAlign: TextAlign.left,
@@ -98,7 +95,6 @@ class WelcomeScreen extends StatelessWidget {
 
                   const SizedBox(height: 36),
 
-                  // Botón Iniciar Sesión
                   SizedBox(
                     width: double.infinity,
                     height: 56,
@@ -131,7 +127,6 @@ class WelcomeScreen extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  // Botón Crear Cuenta
                   SizedBox(
                     width: double.infinity,
                     height: 56,

@@ -8,7 +8,7 @@ import '../models/informacion_personal_dto_req.dart';
 
 class PerfilService {
   // URL base de producción en Render
-  static const String _baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1/usuarios';
+  static const String _baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1/usuarios';
 
   final AuthLocalService _authLocalService = AuthLocalService();
 

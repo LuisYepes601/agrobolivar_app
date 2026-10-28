@@ -11,6 +11,7 @@ class ProductoDetalle {
   final double cantidadMinima;
   final double cantidadMax;
   final double cantActual;
+  final String? telefono; // 👈 Campo de teléfono agregado
 
   ProductoDetalle({
     required this.id,
@@ -25,6 +26,7 @@ class ProductoDetalle {
     required this.cantidadMinima,
     required this.cantidadMax,
     required this.cantActual,
+    this.telefono, // 👈 Incluido en constructor
   });
 
   factory ProductoDetalle.fromJson(Map<String, dynamic> json) {
@@ -34,7 +36,6 @@ class ProductoDetalle {
       descripcion: json['descripcion'],
       precioUnidad: (json['precioUnidad'] as num?)?.toDouble() ?? 0.0,
       categoria: json['categoria'] ?? '',
-      // Soporta tanto 'imgProdcuto' (del JSON de la API) como 'imgProducto'
       imgProducto: json['imgProdcuto'] ?? json['imgProducto'],
       marcaProducto: json['marcaProducto'] ?? '',
       unidadPeso: json['unidadPeso'] ?? '',
@@ -42,6 +43,7 @@ class ProductoDetalle {
       cantidadMinima: (json['cantidadMinima'] as num?)?.toDouble() ?? 0.0,
       cantidadMax: (json['cantidadMax'] as num?)?.toDouble() ?? 0.0,
       cantActual: (json['cantActual'] as num?)?.toDouble() ?? 0.0,
+      telefono: json['telefono']?.toString(), // 👈 Mapeado desde el JSON
     );
   }
 }

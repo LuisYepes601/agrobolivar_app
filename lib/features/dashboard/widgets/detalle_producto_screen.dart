@@ -17,12 +17,14 @@ import 'package:agro_bolivar/features/unidades_peso/services/unidad_peso_service
 
 class DetalleProductoScreen extends StatefulWidget {
   final int productoId;
-  final bool esTienda; // 👈 Oculta el botón de edición y muestra WhatsApp solo si es true
+  final String? telefono; // 👈 Recibe el teléfono por parámetro
+  final bool esTienda;
 
   const DetalleProductoScreen({
     super.key,
     required this.productoId,
-    this.esTienda = false, // 👈 Valor por defecto en false
+    this.telefono, // 👈 Agregado al constructor
+    this.esTienda = false,
   });
 
   @override
@@ -400,10 +402,24 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
   }
 
   Future<void> _abrirWhatsApp(BuildContext context, String productoNombre) async {
-    const telefonoWhatsApp = '573000000000'; // 👈 Reemplaza por tu número de contacto
+    // 👈 Intenta obtener el número desde widget.telefono o desde el objeto _producto
+    final telefonoVendedor = widget.telefono ?? _producto?.telefono;
+
+    if (telefonoVendedor == null || telefonoVendedor.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El vendedor no tiene un número registrado.')),
+      );
+      return;
+    }
+
+    String numLimpio = telefonoVendedor.replaceAll(RegExp(r'\D'), '');
+
+    if (!numLimpio.startsWith('57') && numLimpio.length == 10) {
+      numLimpio = '57$numLimpio';
+    }
 
     final mensaje = Uri.encodeComponent('¡Hola! Me interesa comprar "$productoNombre" que vi en AgroBolívar.');
-    final uri = Uri.parse('https://wa.me/$telefonoWhatsApp?text=$mensaje');
+    final uri = Uri.parse('https://wa.me/$numLimpio?text=$mensaje');
 
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -434,7 +450,6 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
         iconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         actions: [
-          // 👈 Si esTienda es true, se oculta toda la lógica de edición
           if (!widget.esTienda && _producto != null && !_isLoading && !_isSaving)
             if (_esModoEdicion) ...[
               IconButton(
@@ -520,9 +535,6 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
         ),
       ),
 
-      // ---------------------------------------------------------------------
-      // BOTÓN DE COMPRA (SOLO VISIBLE SI ES VISTA TIENDA, NO SE EDITANDO Y HAY PRODUCTO)
-      // ---------------------------------------------------------------------
       bottomNavigationBar: (widget.esTienda && !_isLoading && !_isSaving && _errorMessage == null && _producto != null && !_esModoEdicion)
           ? Container(
         padding: const EdgeInsets.all(16),
@@ -541,7 +553,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
             height: 50,
             child: ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF25D366), // Verde oficial WhatsApp
+                backgroundColor: const Color(0xFF25D366),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -959,7 +971,7 @@ class _DetalleProductoScreenState extends State<DetalleProductoScreen> {
                 value: _esToxico,
                 onChanged: (v) => setState(() => _esToxico = v),
               ),
-              SwitchListTile(
+               SwitchListTile(
                 title: const Text('Corrosivo'),
                 value: _esCorrosivo,
                 onChanged: (v) => setState(() => _esCorrosivo = v),

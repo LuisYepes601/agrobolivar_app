@@ -24,7 +24,7 @@ class ProductosPageResponse {
 class ProductoService {
   static String get baseUrl {
   
-    return 'https://agro-bolivar-api-1.onrender.com';
+    return 'https://agro-bolivar-api-vwo2.onrender.com';
   }
 
   // 1. Obtener lista paginada y filtrada del catálogo general (Tienda)

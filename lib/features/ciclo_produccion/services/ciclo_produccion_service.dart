@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import '../models/ciclo_produccion_model.dart';
 
 class CicloProduccionService {
-  static const String _defaultBaseUrl = 'https://agro-bolivar-api-1.onrender.com';
+  static const String _defaultBaseUrl = 'https://agro-bolivar-api-vwo2.onrender.com';
   final String baseUrl;
   final http.Client httpClient;
 

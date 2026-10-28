@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '../model/familia_planta_model.dart';
 
 class FamiliaPlantaService {
-  final String baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1/familias-botanicas/admin';
+  final String baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1/familias-botanicas/admin';
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',

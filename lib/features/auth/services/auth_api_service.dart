@@ -11,7 +11,7 @@ class AuthApiService {
   final String baseUrl;
 
   AuthApiService({
-    this.baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1',
+    this.baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1',
   });
 
   /// Método de inicio de sesión

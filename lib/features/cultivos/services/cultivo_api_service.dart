@@ -11,7 +11,7 @@ import '../models/cultivo_request_dto.dart';
 import '../models/cultivo_update_dto.dart';
 
 class CultivoApiService {
-  static const String baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1/cultivos/admin';
+  static const String baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1/cultivos/admin';
   final AuthLocalService _authLocalService = AuthLocalService();
 
   /// NVO MÉTODO: Obtiene la lista general de todos los cultivos (Sin pasar id_usuario)

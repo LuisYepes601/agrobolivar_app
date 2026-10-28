@@ -32,13 +32,11 @@ class _TiendaTabState extends State<TiendaTab> {
   bool _isLoadingMarcas = true;
   String? _errorMessage;
 
-  // Controladores de paginación
   int _currentPage = 0;
   int _totalPages = 1;
   int _totalElements = 0;
   final int _pageSize = 10;
 
-  // Filtros de búsqueda
   String? _searchNombre;
   int? _idCat;
   int? _idMarca;
@@ -593,7 +591,6 @@ class _TiendaTabState extends State<TiendaTab> {
       backgroundColor: const Color(0xFFFAFAFA),
       body: Column(
         children: [
-          // 1. Barra de Búsqueda
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             color: Colors.white,
@@ -667,10 +664,8 @@ class _TiendaTabState extends State<TiendaTab> {
             ),
           ),
 
-          // 2. Cinta Marquesina 100% Sin Cortes
           const CintaAgroBolivar(),
 
-          // 3. Contenido Principal
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E4D2B)))
@@ -725,7 +720,6 @@ class _TiendaTabState extends State<TiendaTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Carrusel Destacado Ligero y Legible
                     CarruselDestacadosSection(
                       productos: _productos,
                       onRefreshRequired: () => _loadProductos(page: _currentPage),
@@ -743,7 +737,6 @@ class _TiendaTabState extends State<TiendaTab> {
                       ),
                     ),
 
-                    // Cuadrícula Principal
                     GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -804,9 +797,6 @@ class _TiendaTabState extends State<TiendaTab> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// CINTA MARQUESINA 100% INFINITA (SIN CORTE VISUAL)
-// ---------------------------------------------------------------------------
 class CintaAgroBolivar extends StatefulWidget {
   const CintaAgroBolivar({super.key});
 
@@ -929,9 +919,6 @@ class _CintaAgroBolivarState extends State<CintaAgroBolivar>
   }
 }
 
-// ---------------------------------------------------------------------------
-// CARRUSEL DESTACADO LIGERAMENTE MÁS ALTO (98 px)
-// ---------------------------------------------------------------------------
 class CarruselDestacadosSection extends StatefulWidget {
   final List<Producto> productos;
   final VoidCallback onRefreshRequired;
@@ -1007,7 +994,7 @@ class _CarruselDestacadosSectionState extends State<CarruselDestacadosSection>
           ),
           const SizedBox(height: 4),
           SizedBox(
-            height: 98, // Ligeramente más alto para mejor legibilidad
+            height: 98,
             child: ListView.builder(
               controller: _scrollController,
               scrollDirection: Axis.horizontal,
@@ -1027,9 +1014,6 @@ class _CarruselDestacadosSectionState extends State<CarruselDestacadosSection>
   }
 }
 
-// ---------------------------------------------------------------------------
-// TARJETA DE PRODUCTO DESTACADO SIN CATEGORÍA NI PRECIO (MAYOR VISIBILIDAD)
-// ---------------------------------------------------------------------------
 class ProductoDestacadoCard extends StatefulWidget {
   final Producto producto;
   final VoidCallback? onRefreshRequired;
@@ -1054,7 +1038,7 @@ class _ProductoDestacadoCardState extends State<ProductoDestacadoCard> {
     final isHighlighted = _isHovered || _isPressed;
 
     return Container(
-      width: 88, // Ancho proporcional a la nueva altura
+      width: 88,
       margin: const EdgeInsets.symmetric(horizontal: 3.5),
       child: MouseRegion(
         onEnter: (_) => setState(() => _isHovered = true),
@@ -1069,6 +1053,7 @@ class _ProductoDestacadoCardState extends State<ProductoDestacadoCard> {
               MaterialPageRoute(
                 builder: (context) => DetalleProductoScreen(
                   productoId: widget.producto.id,
+                  telefono: widget.producto.telefono, // 👈 ENVIADO AQUÍ
                   esTienda: true,
                 ),
               ),
@@ -1105,7 +1090,6 @@ class _ProductoDestacadoCardState extends State<ProductoDestacadoCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Imagen del producto (Ocupa la mayor parte del espacio)
                   Expanded(
                     child: Container(
                       width: double.infinity,
@@ -1130,7 +1114,6 @@ class _ProductoDestacadoCardState extends State<ProductoDestacadoCard> {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  // Nombre del producto
                   Text(
                     widget.producto.nombre,
                     maxLines: 1,
@@ -1152,9 +1135,6 @@ class _ProductoDestacadoCardState extends State<ProductoDestacadoCard> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// TARJETA DE PRODUCTO PARA LA CUADRÍCULA PRINCIPAL
-// ---------------------------------------------------------------------------
 class ProductoGridCard extends StatefulWidget {
   final Producto producto;
   final VoidCallback? onRefreshRequired;
@@ -1192,6 +1172,7 @@ class _ProductoGridCardState extends State<ProductoGridCard> {
             MaterialPageRoute(
               builder: (context) => DetalleProductoScreen(
                 productoId: widget.producto.id,
+                telefono: widget.producto.telefono, // 👈 ENVIADO AQUÍ
                 esTienda: true,
               ),
             ),

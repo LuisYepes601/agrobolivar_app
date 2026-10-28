@@ -9,7 +9,7 @@ class TipoDocumentoApiService {
   final String baseUrl;
 
   TipoDocumentoApiService({
-    this.baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1',
+    this.baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1',
   });
 
   /// Consume GET /api/v1/tipo-documentos/admin y retorna directamente List<TipoDocumentoModel>

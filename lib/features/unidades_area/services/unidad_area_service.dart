@@ -6,7 +6,7 @@ import '../models/unidad_area_model.dart';
 
 class UnidadAreaService {
   static String get _baseUrl {
-    return 'https://agro-bolivar-api-1.onrender.com';
+    return 'https://agro-bolivar-api-vwo2.onrender.com';
   }
 
   static String get _endpoint => '$_baseUrl/api/v1/unidades-area/admin';

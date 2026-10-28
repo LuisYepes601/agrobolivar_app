@@ -4,7 +4,7 @@ import '../models/tipo_planta_model.dart';
 
 class TipoPlantaService {
   // Ruta final para el endpoint del backend
-  final String baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1/admin/tipo-plantas';
+  final String baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1/admin/tipo-plantas';
 
   Map<String, String> get _headers => {
     'Content-Type': 'application/json',

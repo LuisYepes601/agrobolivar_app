@@ -9,7 +9,7 @@ import '../models/planta_detail_model.dart';
 import '../models/planta_model.dart';
 
 class PlantaService {
-  static const String _baseUrl = 'https://agro-bolivar-api-1.onrender.com/api/v1/plantas/admin';
+  static const String _baseUrl = 'https://agro-bolivar-api-vwo2.onrender.com/api/v1/plantas/admin';
 
   /// Crea una nueva planta (`POST /api/v1/plantas/admin`) mediante Multipart/Form-Data
   Future<bool> crearPlanta({
