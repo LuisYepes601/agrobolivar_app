@@ -1,6 +1,8 @@
 // lib/features/dashboard/screens/user_dashboard_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:agro_bolivar/core/services/agro_voice_service.dart';
+import 'package:agro_bolivar/core/services/voice_command_dispatcher.dart'; // 👈 Importamos el despachador
 import 'package:agro_bolivar/features/auth/services/auth_local_service.dart';
 import 'package:agro_bolivar/features/auth/screens/login_screen.dart';
 import 'package:agro_bolivar/features/dashboard/widgets/home_tab.dart';
@@ -33,6 +35,7 @@ class UserDashboardScreen extends StatefulWidget {
 
 class _UserDashboardScreenState extends State<UserDashboardScreen> {
   int _selectedIndex = 0;
+
   final _authLocalService = AuthLocalService();
   final _dashboardService = DashboardService();
 
@@ -64,6 +67,23 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
   void initState() {
     super.initState();
     _loadUserData();
+
+    // 🎤 Conectamos el despachador de comandos de voz con las acciones del Dashboard
+    VoiceCommandDispatcher().inicializar(
+      onNavigateToTab: (index) {
+        if (mounted) {
+          setState(() => _selectedIndex = index);
+        }
+      },
+      onOpenPerfil: _navigateToPerfil,
+    );
+  }
+
+  @override
+  void dispose() {
+    // 🛑 Limpiamos la suscripción del despachador al salir del Dashboard
+    VoiceCommandDispatcher().dispose();
+    super.dispose();
   }
 
   Future<void> _loadUserData() async {
@@ -134,28 +154,28 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     if (isUsuario) {
       switch (_selectedIndex) {
         case 0:
-          return 0; // Inicio
+          return 0;
         case 3:
-          return 1; // Cultivos
+          return 1;
         case 4:
-          return 2; // Guía Plantas
+          return 2;
         case 5:
-          return 3; // Tienda
+          return 3;
         default:
           return -1;
       }
     } else {
       switch (_selectedIndex) {
         case 0:
-          return 0; // Inicio
+          return 0;
         case 1:
-          return 1; // Mis Productos
+          return 1;
         case 2:
-          return 2; // Mis Cultivos
+          return 2;
         case 4:
-          return 3; // Guía Plantas
+          return 3;
         case 5:
-          return 4; // Tienda
+          return 4;
         default:
           return -1;
       }
@@ -170,14 +190,12 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
     final userRole = _userInfo?.rol ?? widget.userRole;
     final photoUrl = _userInfo?.fotoPerfil;
 
-    // Normalización de roles para evaluación de accesos (RBAC)
     final cleanRole = userRole.toUpperCase().replaceAll('ROLE_', '').trim();
     final isUsuario = cleanRole == 'USUARIO' || cleanRole == 'USER';
     final isAdmin = cleanRole == 'ADMIN' || cleanRole == 'ADMINISTRADOR';
 
-    // Permisos explícitos:
-    final showMisModulos = !isUsuario; // Admin y Agricultor/Productor
-    final showParametros = isAdmin;    // Únicamente Administrador
+    final showMisModulos = !isUsuario;
+    final showParametros = isAdmin;
 
     final bottomNavIndex = _getBottomNavIndex(isUsuario);
     final isBottomNavSelected = bottomNavIndex != -1;
@@ -283,7 +301,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     title: 'Inicio',
                     index: 0,
                   ),
-                  // 'Mis Productos' y 'Mis Cultivos' para ADMIN o AGRICULTOR/PRODUCTOR
                   if (showMisModulos) ...[
                     _buildDrawerItem(
                       icon: Icons.shopping_bag_outlined,
@@ -311,7 +328,6 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
                     title: 'Tienda',
                     index: 5,
                   ),
-                  // 'Parámetros' se muestra ÚNICAMENTE a ADMIN
                   if (showParametros)
                     _buildDrawerItem(
                       icon: Icons.tune_rounded,
@@ -371,6 +387,28 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           const AdminParametrosScreen(),
         ],
       ),
+      // 🎤 Botón de voz flotante totalmente aislado
+      floatingActionButton: ValueListenableBuilder<bool>(
+        valueListenable: AgroVoiceService().isListeningNotifier,
+        builder: (context, isListening, child) {
+          return FloatingActionButton.extended(
+            backgroundColor: isListening ? Colors.redAccent : primaryColor,
+            elevation: isListening ? 12 : 6,
+            icon: Icon(
+              isListening ? Icons.graphic_eq : Icons.mic,
+              color: Colors.white,
+            ),
+            label: Text(
+              isListening ? 'Escuchando...' : 'Hablar',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            onPressed: () => AgroVoiceService().alternarEscucha(),
+          );
+        },
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: isBottomNavSelected ? bottomNavIndex : 0,
         selectedItemColor: isBottomNavSelected ? primaryColor : Colors.grey,
@@ -389,16 +427,16 @@ class _UserDashboardScreenState extends State<UserDashboardScreen> {
           if (isUsuario) {
             switch (index) {
               case 0:
-                setState(() => _selectedIndex = 0); // Inicio
+                setState(() => _selectedIndex = 0);
                 break;
               case 1:
-                setState(() => _selectedIndex = 3); // Cultivos
+                setState(() => _selectedIndex = 3);
                 break;
               case 2:
-                setState(() => _selectedIndex = 4); // Guía Plantas
+                setState(() => _selectedIndex = 4);
                 break;
               case 3:
-                setState(() => _selectedIndex = 5); // Tienda
+                setState(() => _selectedIndex = 5);
                 break;
             }
           } else {

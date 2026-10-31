@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+<key>NSMicrophoneUsageDescription</key>
+<string>AgroBolívar requiere el micrófono para escuchar tus comandos de voz.</string>
+<key>NSSpeechRecognitionUsageDescription</key>
+<string>AgroBolívar necesita reconocer tu voz para navegar por la aplicación.</string>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>Necesitamos acceso a tus fotos para seleccionar la imagen del producto.</string>
     <key>NSCameraUsageDescription</key>

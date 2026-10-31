@@ -1,3 +1,5 @@
+// lib/features/categorias/screens/categorias_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:agro_bolivar/features/categorias/models/categoria_model.dart';
@@ -8,6 +10,7 @@ class CategoriasScreen extends StatefulWidget {
   final CategoriaService? categoriaService;
   final Function(String nombre, String? descripcion)? onAgregar;
   final Function(Categoria categoria, String nombre, String? descripcion)? onEditar;
+  final ValueNotifier<bool>? openCrearNotifier; // 👈 Escucha el evento de voz para crear
 
   const CategoriasScreen({
     super.key,
@@ -15,6 +18,7 @@ class CategoriasScreen extends StatefulWidget {
     this.categoriaService,
     this.onAgregar,
     this.onEditar,
+    this.openCrearNotifier,
   });
 
   static const primaryGreen = Color(0xFF1E4D2B);
@@ -37,9 +41,33 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
     super.initState();
     _categoriaService = widget.categoriaService ?? CategoriaService();
     _cargarCategorias();
+
+    // Escuchar evento de creación por voz
+    widget.openCrearNotifier?.addListener(_onOpenCrearVoice);
   }
 
-  // --- OBTENER CATEGORÍAS DEL SERVICIO ---
+  @override
+  void didUpdateWidget(covariant CategoriasScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.openCrearNotifier != widget.openCrearNotifier) {
+      oldWidget.openCrearNotifier?.removeListener(_onOpenCrearVoice);
+      widget.openCrearNotifier?.addListener(_onOpenCrearVoice);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.openCrearNotifier?.removeListener(_onOpenCrearVoice);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onOpenCrearVoice() {
+    if (mounted) {
+      _openCategoriaModal(); // Despliega el modal de creación automáticamente
+    }
+  }
+
   Future<void> _cargarCategorias() async {
     setState(() {
       _isLoading = true;
@@ -71,7 +99,6 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
         .toList();
   }
 
-  // --- MODAL PARA CREAR O EDITAR CATEGORÍA ---
   void _openCategoriaModal({Categoria? categoria}) {
     final isEditing = categoria != null;
     final nombreController = TextEditingController(text: categoria?.nombre ?? '');
@@ -122,6 +149,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                     TextFormField(
                       controller: nombreController,
                       enabled: !_isSaving,
+                      autofocus: true,
                       decoration: InputDecoration(
                         labelText: 'Nombre de la Categoría',
                         prefixIcon: const Icon(Icons.label_outline_rounded),
@@ -265,7 +293,6 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
         color: CategoriasScreen.primaryGreen,
         child: Column(
           children: [
-            // BUSCADOR TIPO WHATSAPP / IOS
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
               child: TextField(
@@ -293,22 +320,10 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                     borderRadius: BorderRadius.circular(20),
                     borderSide: BorderSide.none,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    borderSide: BorderSide(color: CategoriasScreen.primaryGreen.withOpacity(0.3)),
-                  ),
                 ),
               ),
             ),
-
-            // CARRUSEL HERO DE CATEGORÍAS DESTACADAS (Se oculta al buscar)
             if (_searchQuery.isEmpty) const _HeroCategoryCarousel(),
-
-            // LISTADO DE TARJETAS
             Expanded(
               child: _isLoading
                   ? const Center(
@@ -386,7 +401,6 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
   }
 }
 
-// --- WIDGET DEL CARRUSEL HERO ---
 class _HeroCategoryCarousel extends StatefulWidget {
   const _HeroCategoryCarousel();
 
@@ -399,25 +413,25 @@ class _HeroCategoryCarouselState extends State<_HeroCategoryCarousel> {
   int _currentPage = 0;
   Timer? _timer;
 
-  final List<Map<String, String>> _heroItems = [
-    {
-      'title': 'Granos y Cereales',
-      'subtitle': 'Maíz, arroz, avena y cereales seleccionados',
-      'image': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=800&auto=format&fit=crop',
-      'tag': 'Popular',
-    },
-    {
-      'title': 'Frutas y Hortalizas',
-      'subtitle': 'Cosechas frescas traídas del campo',
-      'image': 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=800&auto=format&fit=crop',
-      'tag': 'Frescos',
-    },
-    {
-      'title': 'Dulces y Transformados',
-      'subtitle': 'Mieles, mermeladas y golosinas artesanales',
-      'image': 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80',
-      'tag': 'Artesanal',
-    },
+  final List _heroItems = [
+  {
+  'title': 'Granos y Cereales',
+  'subtitle': 'Maíz, arroz, avena y cereales seleccionados',
+  'image': 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?q=80&w=800&auto=format&fit=crop',
+  'tag': 'Popular',
+  },
+  {
+  'title': 'Frutas y Hortalizas',
+  'subtitle': 'Cosechas frescas traídas del campo',
+  'image': 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?q=80&w=800&auto=format&fit=crop',
+  'tag': 'Frescos',
+  },
+  {
+  'title': 'Dulces y Transformados',
+  'subtitle': 'Mieles, mermeladas y golosinas artesanales',
+  'image': 'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=800&q=80',
+  'tag': 'Artesanal',
+  },
   ];
 
   @override
@@ -467,7 +481,6 @@ class _HeroCategoryCarouselState extends State<_HeroCategoryCarousel> {
                   borderRadius: BorderRadius.circular(18),
                   child: Stack(
                     children: [
-                      // Imagen de fondo
                       Positioned.fill(
                         child: Image.network(
                           item['image']!,
@@ -477,7 +490,6 @@ class _HeroCategoryCarouselState extends State<_HeroCategoryCarousel> {
                           ),
                         ),
                       ),
-                      // Sombra en degradado
                       Positioned.fill(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
@@ -492,7 +504,6 @@ class _HeroCategoryCarouselState extends State<_HeroCategoryCarousel> {
                           ),
                         ),
                       ),
-                      // Textos e insignias del Hero
                       Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
@@ -547,7 +558,6 @@ class _HeroCategoryCarouselState extends State<_HeroCategoryCarousel> {
           ),
         ),
         const SizedBox(height: 10),
-        // Indicador de Puntos (Dots)
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
